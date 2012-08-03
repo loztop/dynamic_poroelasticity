@@ -1,3 +1,6 @@
+*.e
+*.md
+
 # Compiled Object files
 *.slo
 *.lo

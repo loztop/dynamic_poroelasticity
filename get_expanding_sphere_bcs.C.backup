@@ -1,0 +1,71 @@
+//#include "functions.h"
+#include <iostream>
+#include "elem.h"
+#include "equation_systems.h"
+#include "dof_map.h"
+#include "solid_system.h"
+#include "linear_implicit_system.h"
+#include "transient_system.h"
+
+using namespace libMesh;
+
+Point get_expanding_sphere_bcs(EquationSystems& es, const Elem* elem, int n, double scale){
+  
+ //TransientLinearImplicitSystem & newton_update =es.get_system<TransientLinearImplicitSystem> ("Newton-update");
+ //System & ref_sys = es.get_system("solid"); 
+
+
+  const MeshBase& aux_mesh = es.get_mesh();
+  Elem* aux_el=aux_mesh.elem(elem->id());
+  
+  
+//std::cout<<"dof_indices_bcs " <<dof_indices_bcs.size()<<std::endl;
+
+  
+  //We need to find the correct displacemnt for nodes that are on an edge (i.e are not a vertex)
+  //To compute the correct poswition we take the two vertex nodes (a,c) and compute the midpoint (b) which will be the desired boundary condition.
+  
+  if(n=7){
+    Point a = scale*(elem->point(0));
+    Point c = scale*(elem->point(3));
+    Point b = c+(0.5*a-0.5*c);
+//      std::cout << "a=  "<< a << std::endl;
+  //    std::cout << "b=  "<< b << std::endl;
+    //  std::cout << "c=  "<< c << std::endl;
+      return b;
+  }
+  if(n=7){
+    Point a = scale*(elem->point(0));
+    Point c = scale*(elem->point(3));
+    return c+(0.5*a-0.5*c);
+  }
+  if(n=4){
+    Point a = scale*(elem->point(1));
+    Point c = scale*(elem->point(0));
+    return c+(0.5*a-0.5*c);
+  }
+  if(n=8){
+    Point a = scale*(elem->point(1));
+    Point c = scale*(elem->point(3));
+    return c+(0.5*a-0.5*c);
+  }
+  if(n=5){
+    Point a = scale*(elem->point(1));
+    Point c = scale*(elem->point(2));
+    return c+(0.5*a-0.5*c);
+  }
+  if(n=9){
+    Point a = scale*(elem->point(3));
+    Point c = scale*(elem->point(2));
+    return c+(0.5*a-0.5*c);
+  }
+  if(n=6){
+    Point a = scale*(elem->point(0));
+    Point c = scale*(elem->point(2));
+    return c+(0.5*a-0.5*c);
+  }
+ else{
+   return scale*(elem->point(n));
+ }
+  
+}

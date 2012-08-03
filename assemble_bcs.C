@@ -1,0 +1,432 @@
+#include "defines.h"
+#include "assemble.h"
+#include <cmath>
+using namespace std;
+#define PI 3.14159265
+// The matrix assembly function to be called at each time step to
+// prepare for the linear solve.
+void assemble_bcs (EquationSystems& es)
+{
+  //std::cout<<"Now assembling Boundary Conditions"<<std::endl;  
+
+  // Get a constant reference to the mesh object.
+  const MeshBase& mesh = es.get_mesh();
+  
+TransientLinearImplicitSystem & newton_update =
+    es.get_system<TransientLinearImplicitSystem> ("Newton-update");
+
+TransientLinearImplicitSystem & last_non_linear_soln =
+    es.get_system<TransientLinearImplicitSystem> ("Last-non-linear-soln");
+
+   const System & ref_sys = es.get_system("Reference-Configuration"); 
+  
+  // Numeric ids corresponding to each variable in the system
+  const unsigned int u_var = last_non_linear_soln.variable_number ("u");
+  const unsigned int v_var = last_non_linear_soln.variable_number ("v");
+  const unsigned int w_var = last_non_linear_soln.variable_number ("w");
+#if INCOMPRESSIBLE
+  const unsigned int p_var = last_non_linear_soln.variable_number ("p");
+#endif 
+FEType fe_vel_type = last_non_linear_soln.variable_type(u_var);
+
+std::vector< int > rows;
+ 
+#if DYNAMIC
+    const Real dt    = es.parameters.get<Real>("dt");
+    const Real progress    = es.parameters.get<Real>("progress");
+#endif
+ 
+ //Build face
+ #if TRACTION_BC
+AutoPtr<FEBase> fe_face (FEBase::build(3, fe_vel_type));
+                
+    AutoPtr<QBase> qface(fe_vel_type.default_quadrature_rule(3-1));
+  
+    fe_face->attach_quadrature_rule (qface.get());
+
+    // AutoPtr<FEBase> fe_face (FEBase::build(dim, fe_vel_type));
+    // QGauss qface (dim-1, fe_vel_type.default_quadrature_order());
+    // const std::vector<Real>& JxW_face = fe_face->get_JxW();
+    // const std::vector<std::vector<Real> >& psi_face = fe_face->get_phi();	
+#endif
+ 
+  // The value of the linear shape function gradients at the quadrature points
+  // const std::vector<std::vector<RealGradient> >& dpsi = fe_pres->get_dphi();
+  
+  // A reference to the \p DofMap object for this system.  The \p DofMap
+  // object handles the index translation from node and element numbers
+  // to degree of freedom numbers.  We will talk more about the \p DofMap
+  // in future examples.
+  const DofMap & dof_map = last_non_linear_soln.get_dof_map();
+
+test(81);
+  // K will be the jacobian
+  // F will be the Residual
+  DenseMatrix<Number> Ke;
+  DenseVector<Number> Fe;
+
+  DenseSubMatrix<Number>
+    Kuu(Ke), Kuv(Ke), Kuw(Ke), 
+    Kvu(Ke), Kvv(Ke), Kvw(Ke), 
+    Kwu(Ke), Kwv(Ke), Kww(Ke); 
+    
+#if INCOMPRESSIBLE
+  DenseSubMatrix<Number>  Kup(Ke),Kvp(Ke),Kwp(Ke), Kpu(Ke), Kpv(Ke), Kpw(Ke), Kpp(Ke);
+ #endif;
+    
+  DenseSubVector<Number>
+    Fu(Fe),
+    Fv(Fe),
+    Fw(Fe);
+#if INCOMPRESSIBLE
+  DenseSubVector<Number>    Fp(Fe);
+#endif
+  // This vector will hold the degree of freedom indices for
+  // the element.  These define where in the global system
+  // the element degrees of freedom get mapped.
+  std::vector<unsigned int> dof_indices;
+  std::vector<unsigned int> dof_indices_u;
+  std::vector<unsigned int> dof_indices_v;
+  std::vector<unsigned int> dof_indices_w;
+  
+#if INCOMPRESSIBLE
+  std::vector<unsigned int> dof_indices_p;
+#endif
+ 
+  // Now we will loop over all the elements in the mesh that
+  // live on the local processor. We will compute the element
+  // matrix and right-hand-side contribution.  Since the mesh
+  // will be refined we want to only consider the ACTIVE elements,
+  // hence we use a variant of the \p active_elem_iterator.
+  MeshBase::const_element_iterator       el     = mesh.active_local_elements_begin();
+  const MeshBase::const_element_iterator end_el = mesh.active_local_elements_end(); 
+
+  for ( ; el != end_el; ++el)
+    {    
+
+      const Elem* elem = *el;
+      
+      dof_map.dof_indices (elem, dof_indices);
+      dof_map.dof_indices (elem, dof_indices_u, u_var);
+      dof_map.dof_indices (elem, dof_indices_v, v_var);
+      dof_map.dof_indices (elem, dof_indices_w, w_var);
+#if INCOMPRESSIBLE
+      dof_map.dof_indices (elem, dof_indices_p, p_var);
+#endif
+      const unsigned int n_dofs   = dof_indices.size();
+      const unsigned int n_u_dofs = dof_indices_u.size(); 
+      const unsigned int n_v_dofs = dof_indices_v.size(); 
+      const unsigned int n_w_dofs = dof_indices_w.size(); 
+#if INCOMPRESSIBLE
+      const unsigned int n_p_dofs = dof_indices_p.size();
+#endif
+
+      Ke.resize (n_dofs, n_dofs);
+      Fe.resize (n_dofs);
+
+      Kuu.reposition (u_var*n_u_dofs, u_var*n_u_dofs, n_u_dofs, n_u_dofs);
+      Kuv.reposition (u_var*n_u_dofs, v_var*n_u_dofs, n_u_dofs, n_v_dofs);
+      Kuw.reposition (u_var*n_u_dofs, w_var*n_u_dofs, n_u_dofs, n_w_dofs);
+      #if INCOMPRESSIBLE
+      Kup.reposition (u_var*n_u_dofs, p_var*n_u_dofs, n_u_dofs, n_p_dofs);
+      #endif
+      Kvu.reposition (v_var*n_v_dofs, u_var*n_v_dofs, n_v_dofs, n_u_dofs);
+      Kvv.reposition (v_var*n_v_dofs, v_var*n_v_dofs, n_v_dofs, n_v_dofs);
+      Kvw.reposition (v_var*n_v_dofs, w_var*n_v_dofs, n_v_dofs, n_w_dofs);
+      #if INCOMPRESSIBLE
+      Kvp.reposition (v_var*n_v_dofs, p_var*n_v_dofs, n_v_dofs, n_p_dofs);
+      #endif
+      
+      Kwu.reposition (w_var*n_w_dofs, u_var*n_w_dofs, n_w_dofs, n_u_dofs);
+      Kwv.reposition (w_var*n_w_dofs, v_var*n_w_dofs, n_w_dofs, n_v_dofs);
+      Kww.reposition (w_var*n_w_dofs, w_var*n_w_dofs, n_w_dofs, n_w_dofs);
+      #if INCOMPRESSIBLE
+      Kwp.reposition (w_var*n_w_dofs, p_var*n_w_dofs, n_w_dofs, n_p_dofs);
+      
+      Kpu.reposition (p_var*n_u_dofs, u_var*n_u_dofs, n_p_dofs, n_u_dofs);
+      Kpv.reposition (p_var*n_u_dofs, v_var*n_u_dofs, n_p_dofs, n_v_dofs);
+      Kpw.reposition (p_var*n_u_dofs, w_var*n_u_dofs, n_p_dofs, n_w_dofs);
+      Kpp.reposition (p_var*n_u_dofs, p_var*n_u_dofs, n_p_dofs, n_p_dofs);
+      #endif
+      
+      Fu.reposition (u_var*n_u_dofs, n_u_dofs);
+      Fv.reposition (v_var*n_u_dofs, n_v_dofs);
+      Fw.reposition (w_var*n_u_dofs, n_w_dofs);
+      #if INCOMPRESSIBLE
+      Fp.reposition (p_var*n_u_dofs, n_p_dofs);
+      #endif
+
+//Now start actually applying the BCS        
+
+for (unsigned int s=0; s<elem->n_sides(); s++){
+   if (elem->neighbor(s) == NULL)
+   {		
+   AutoPtr<Elem> side (elem->build_side(s));
+
+
+#if PENALTY
+    for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {     
+for (unsigned int n=0; n<elem->n_nodes(); n++){
+test(1);
+      double x_val_ref = ref_sys.current_local_solution->el(dof_indices_u[n]);
+test(2);  
+      double y_val_ref = ref_sys.current_local_solution->el(dof_indices_v[n]);
+      double z_val_ref = ref_sys.current_local_solution->el(dof_indices_w[n]);
+      double rsquared = x_val_ref*x_val_ref + y_val_ref*y_val_ref + z_val_ref*z_val_ref;
+
+      double old_rad = 9;
+      double new_rad = 9;
+      double scale_fac_squared = pow(new_rad,2)/rsquared;
+      double scale_fac = new_rad/pow(rsquared,0.5);
+      scale_fac=0.8;
+test(82);
+
+#if SPHERE 
+  if ((elem->node(n) == side->node(ns)) && (rsquared<50 )  )
+#endif
+#if CUBE 
+  if ((elem->node(n) == side->node(ns)) && (x_val_ref<0.001)  )
+#endif
+  {
+    // Point p_bc=get_expanding_sphere_bcs(es, elem, n,scale_fac);
+ 
+ #if SPHERE 
+ Real u_value = last_non_linear_soln.current_local_solution->el(dof_indices_u[n])-x_val_ref*scale_fac;
+ Real v_value = last_non_linear_soln.current_local_solution->el(dof_indices_v[n])-y_val_ref*scale_fac;
+ Real w_value = last_non_linear_soln.current_local_solution->el(dof_indices_w[n])-z_val_ref*scale_fac;
+#endif
+
+const Real penalty = 1.e10;
+
+      Kuu(n,n) += penalty;
+      Kvv(n,n) += penalty;
+			Kww(n,n) += penalty;
+                 
+			Fu(n) += penalty*u_value;
+      Fv(n) += penalty*v_value;
+			Fw(n) += penalty*w_value;
+    } //end of if x_val>bla
+   } // end n=0; n<elem->n_nodes(); n++ 
+    }// end ns=0; ns<side->n_nodes(); ns++
+ #endif  //end of penalty
+
+test(83);
+#if TRACTION_BC
+ 	const Real penalty = 1.e10;
+        Node *noode = side->get_node(0);
+    	unsigned int source_dof = noode->dof_number(1, 0, 0);
+        Real x_value = ref_sys.current_local_solution->el(noode->dof_number(1, 0, 0));
+        Real y_value = ref_sys.current_local_solution->el(noode->dof_number(1, 1, 0));
+        Real z_value = ref_sys.current_local_solution->el(noode->dof_number(1, 2, 0));
+
+        const std::vector<std::vector<Real> >&  phi_face =                             fe_face->get_phi();
+        const std::vector<std::vector<RealGradient> >& dphi_face = fe_face->get_dphi();
+        const std::vector<Real>& JxW_face = fe_face->get_JxW();
+        const std::vector<Point>& qface_point = fe_face->get_xyz();
+        const std::vector<Point>& face_normals =
+        fe_face->get_normals();
+        fe_face->reinit(elem,s);  
+        Real rsq=    x_value*x_value + y_value*y_value +z_value*z_value;         
+
+	if( (y_value>0.99) && (x_value>3) )
+	{
+                for (unsigned int qp=0; qp<qface->n_points(); qp++)
+                  {
+                    const Number value = +10;
+                                                         
+                    for (unsigned int i=0; i<phi_face.size(); i++){
+
+                     Fu(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
+                     Fv(i) += - JxW_face[qp]*value*face_normals[qp](1)*phi_face[i][qp];
+                     Fw(i) += - JxW_face[qp]*value*face_normals[qp](2)*phi_face[i][qp];
+		    }
+                    for (unsigned int i=0; i<phi_face.size(); i++){
+                      for (unsigned int j=0; j<phi_face.size(); j++){
+	Kuu(i,j) += value*face_normals[qp](0)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+	Kvv(i,j) += value*face_normals[qp](1)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+	Kww(i,j) += value*face_normals[qp](2)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+		      }
+		    }     
+		} //end qp
+	       } //end if     
+#endif //end Traction BCs
+           
+
+
+
+
+
+#if DIRICHLET_CLASSIC
+//Apply Dirichlet Bcs properly
+test(84);
+    for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+     for (unsigned int n=0; n<elem->n_nodes(); n++){
+       Node *node = elem->get_node(n);
+	Point p;
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+      	Real value = ref_sys.current_local_solution->el(source_dof);
+      	p(d)=value;
+   	}
+	double rsquared = p(0)*p(0) + p(1)*p(1) + p(2)*p(2);
+test(84);
+
+#if SPHERE 
+  if ((elem->node(n) == side->node(ns)) && (rsquared>50 )  )
+  {
+        double scale_fac =1.02;
+       // Point p_bc=get_expanding_sphere_bcs(es, elem, n,scale_fac);
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+   	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - scale_fac*ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+   	}  //end dimension loop
+   }  //end if
+#endif
+
+   #if CYLINDER 
+  if ((elem->node(n) == side->node(ns)) && ((p(0)*p(0) + p(1)*p(1))>3.8)  )
+  {
+        double scale_fac =1.01;
+  for (unsigned int d = 0; d < 2; ++d) {
+        unsigned int source_dof = node->dof_number(1, d, 0);
+    Real value = last_non_linear_soln.current_local_solution->el(source_dof) - scale_fac*ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+    }  //end dimension loop
+   }  //end if
+
+
+     if ((elem->node(n) == side->node(ns)) && ((p(2)*p(2))>0.249 )  )
+  {
+        double scale_fac =1.0;
+        unsigned int source_dof = node->dof_number(1, 2, 0);
+    Real value = last_non_linear_soln.current_local_solution->el(source_dof) - scale_fac*ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+   }  //end if
+
+#endif
+
+
+#if CUBE 
+/*
+  if ((elem->node(n) == side->node(ns)) && (p(0)<0.001 )  )
+  {
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+   	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+   	}  //end dimension loop
+    }  //end if
+    
+  */
+
+#if MOVING_DIRICHLET_BCS
+
+    if ((elem->node(n) == side->node(ns)) && (p(0)>1.499 )  )
+    {
+	for (unsigned int d = 0; d < 3; ++d) {
+
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+	
+	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+   	}  //end dimension loop
+
+
+#if DYNAMIC
+  //  if (progress<0.1){
+      	unsigned int source_dof = node->dof_number(1, 0, 0);
+	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof) + sin(progress*PI)*0.1; //sin(progress*PI)*0.1;
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+//}
+#endif
+
+     }  //end if
+     
+#endif
+     
+
+
+#if CHAP_SWELL
+
+    if ((elem->node(n) == side->node(ns)) && (p(0)<0.001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 0, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+
+     }  //end if
+ 
+    if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 1, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+     }  //end if
+
+
+   if ((elem->node(n) == side->node(ns)) && (p(2)<0.0001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 2, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+     }  //end if 
+#endif
+
+#endif       
+    } //end nodes in element lopp
+} // end nodes on side loop
+#endif
+
+
+  
+ }//end elem->neighbor(s) == NULL 
+ }// end s=0; s<elem->n_sides(); s++
+test(87);
+
+      // If this assembly program were to be used on an adaptive mesh,
+      // we would have to apply any hanging node constraint equations
+      dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
+
+      // The element matrix and right-hand-side are now built
+      // for this element.  Add them to the global matrix and
+      // right-hand-side vector.  The \p SparseMatrix::add_matrix()
+      // and \p NumericVector::add_vector() members do this for us.
+
+#if TRACTION_BC || PENALTY
+      newton_update.matrix->add_matrix (Ke, dof_indices);
+      newton_update.rhs->add_vector    (Fe, dof_indices);
+#endif
+
+} // end of element loop
+
+#if DIRICHLET_CLASSIC
+        newton_update.matrix->close();
+	newton_update.matrix->zero_rows(rows, 1.0);
+#endif
+
+     newton_update.rhs->close();
+     newton_update.matrix->close();
+     std::cout<<"AFTER BCS newton_update.rhs->l2_norm () "<<newton_update.rhs->l2_norm ()<<std::endl;
+//newton_update.rhs->print(std::cout);
+
+  return;
+}
+
+
+

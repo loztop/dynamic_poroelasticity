@@ -1,0 +1,768 @@
+// C++ include files that we need
+#include <iostream>
+#include <algorithm>
+#include <math.h>
+
+// Basic include file needed for the mesh functionality.
+#include "libmesh.h"
+#include "mesh.h"
+#include "mesh_generation.h"
+#include "exodusII_io.h"
+#include "equation_systems.h"
+#include "fe.h"
+#include "quadrature_gauss.h"
+#include "dof_map.h"
+#include "sparse_matrix.h"
+#include "numeric_vector.h"
+#include "dense_matrix.h"
+#include "dense_vector.h"
+#include "linear_implicit_system.h"
+#include "transient_system.h"
+#include "perf_log.h"
+#include "boundary_info.h"
+#include "utility.h"
+#include "sparse_matrix.h"
+#include "petsc_matrix.h"
+
+// Some (older) compilers do not offer full stream 
+// functionality, OStringStream works around this.
+#include "o_string_stream.h"
+
+// For systems of equations the \p DenseSubMatrix
+// and \p DenseSubVector provide convenient ways for
+// assembling the element matrix and vector on a
+// component-by-component basis.
+#include "dense_submatrix.h"
+#include "dense_subvector.h"
+#include "quadrature.h"
+
+// The definition of a geometric element
+#include "elem.h"
+#include "assemble.h"
+#include "nonlinear_neohooke_cc.h"
+#include "solid_system.h"
+
+#include "math.h"
+
+
+#include <iostream>
+
+//#define BCS 1
+#define TRACTION_BC 0
+#define DIRICHLET_CLASSIC 0
+#define PENALTY 0
+
+
+#define ELASTICITY 1
+#define INCOMPRESSIBLE 1
+#define COMPRESSIBLE 0
+
+
+using namespace std;
+
+
+
+// The matrix assembly function to be called at each time step to
+// prepare for the linear solve.
+void assemble_stokes (EquationSystems& es,
+                      const std::string& system_name)
+{
+    test(6666);
+    // Get a reference to the auxiliary system
+  //TransientExplicitSystem& aux_system = es.get_system<TransientExplicitSystem>("Newton-update");
+
+  // It is a good idea to make sure we are assembling
+  // the proper system.
+  libmesh_assert (system_name == "Newton-update");
+  
+  // Get a constant reference to the mesh object.
+  const MeshBase& mesh = es.get_mesh();
+  
+  // The dimension that we are running
+  const unsigned int dim = mesh.mesh_dimension();
+  
+  test(61);
+  // Get a reference to the Stokes system object.
+  TransientLinearImplicitSystem & newton_update =
+    es.get_system<TransientLinearImplicitSystem> ("Newton-update");
+
+    test(62);
+   const System & ref_sys = es.get_system("solid"); 
+test(63);
+  
+  // Numeric ids corresponding to each variable in the system
+  const unsigned int u_var = newton_update.variable_number ("u");
+  const unsigned int v_var = newton_update.variable_number ("v");
+  const unsigned int w_var = newton_update.variable_number ("w");
+#if INCOMPRESSIBLE
+  const unsigned int p_var = newton_update.variable_number ("p");
+#endif 
+  // Get the Finite Element type for "u".  Note this will be
+  // the same as the type for "v".
+  FEType fe_vel_type = newton_update.variable_type(u_var);
+
+
+
+
+#if INCOMPRESSIBLE
+  // Get the Finite Element type for "p".
+  FEType fe_pres_type = newton_update.variable_type(p_var);
+#endif 
+
+  // Build a Finite Element object of the specified type for
+  // the velocity variables.
+  AutoPtr<FEBase> fe_vel  (FEBase::build(dim, fe_vel_type));
+  
+#if INCOMPRESSIBLE 
+  // Build a Finite Element object of the specified type for
+  // the pressure variables.
+  AutoPtr<FEBase> fe_pres (FEBase::build(dim, fe_pres_type));
+#endif 
+  // A Gauss quadrature rule for numerical integration.
+  // Let the \p FEType object decide what order rule is appropriate.
+  QGauss qrule (dim, fe_vel_type.default_quadrature_order());
+
+  // Tell the finite element objects to use our quadrature rule.
+  fe_vel->attach_quadrature_rule (&qrule);
+
+//        AutoPtr<QBase> qrule2(fe_vel_type.default_quadrature_rule(dim));
+// fe_vel->attach_quadrature_rule (qrule2.get());
+
+#if INCOMPRESSIBLE 
+  fe_pres->attach_quadrature_rule (&qrule);
+#endif
+  // Here we define some references to cell-specific data that
+  // will be used to assemble the linear system.
+  //
+  // The element Jacobian * quadrature weight at each integration point.   
+  const std::vector<Real>& JxW = fe_vel->get_JxW();
+
+  // The element shape functions evaluated at the quadrature points.
+  const std::vector<std::vector<Real> >& phi = fe_vel->get_phi();
+
+  // The element shape function gradients for the velocity
+  // variables evaluated at the quadrature points.
+  const std::vector<std::vector<RealGradient> >& dphi = fe_vel->get_dphi();
+
+#if INCOMPRESSIBLE 
+  // The element shape functions for the pressure variable
+  // evaluated at the quadrature points.
+  const std::vector<std::vector<Real> >& psi = fe_pres->get_phi();
+#endif
+  
+ const std::vector<Point>& coords = fe_vel->get_xyz();
+
+ 
+ 
+ //Build face
+ #if TRACTION_BC
+AutoPtr<FEBase> fe_face (FEBase::build(dim, fe_vel_type));
+                
+    AutoPtr<QBase> qface(fe_vel_type.default_quadrature_rule(dim-1));
+  
+    fe_face->attach_quadrature_rule (qface.get());
+
+
+    // AutoPtr<FEBase> fe_face (FEBase::build(dim, fe_vel_type));
+    // QGauss qface (dim-1, fe_vel_type.default_quadrature_order());
+    // const std::vector<Real>& JxW_face = fe_face->get_JxW();
+    // const std::vector<std::vector<Real> >& psi_face = fe_face->get_phi();	
+#endif
+ 
+  // The value of the linear shape function gradients at the quadrature points
+  // const std::vector<std::vector<RealGradient> >& dpsi = fe_pres->get_dphi();
+  
+  // A reference to the \p DofMap object for this system.  The \p DofMap
+  // object handles the index translation from node and element numbers
+  // to degree of freedom numbers.  We will talk more about the \p DofMap
+  // in future examples.
+  const DofMap & dof_map = newton_update.get_dof_map();
+
+  // K will be the jacobian
+  // F will be the Residual
+  DenseMatrix<Number> Ke;
+  DenseVector<Number> Fe;
+
+  DenseSubMatrix<Number>
+    Kuu(Ke), Kuv(Ke), Kuw(Ke), 
+    Kvu(Ke), Kvv(Ke), Kvw(Ke), 
+    Kwu(Ke), Kwv(Ke), Kww(Ke); 
+    
+#if INCOMPRESSIBLE
+  DenseSubMatrix<Number>  Kup(Ke),Kvp(Ke),Kwp(Ke), Kpu(Ke), Kpv(Ke), Kpw(Ke), Kpp(Ke);
+ #endif;
+    
+  DenseSubVector<Number>
+    Fu(Fe),
+    Fv(Fe),
+    Fw(Fe);
+#if INCOMPRESSIBLE
+  DenseSubVector<Number>    Fp(Fe);
+#endif
+  // This vector will hold the degree of freedom indices for
+  // the element.  These define where in the global system
+  // the element degrees of freedom get mapped.
+  std::vector<unsigned int> dof_indices;
+  std::vector<unsigned int> dof_indices_u;
+  std::vector<unsigned int> dof_indices_v;
+  std::vector<unsigned int> dof_indices_w;
+  
+#if INCOMPRESSIBLE
+  std::vector<unsigned int> dof_indices_p;
+#endif
+  // Find out what the timestep size parameter is from the system, and
+  // the value of theta for the theta method.  We use implicit Euler (theta=1)
+  // for this simulation even though it is only first-order accurate in time.
+  // The reason for this decision is that the second-order Crank-Nicolson
+  // method is notoriously oscillatory for problems with discontinuous
+  // initiaFl data such as the lid-driven cavity.  Therefore,
+  // we sacrifice accuracy in time for stability, but since the solution
+  // reaches steady state relatively quickly we can afford to take small
+  // timesteps.  If you monitor the initial nonlinear residual for this
+  // simulation, you should see that it is monotonically decreasing in time.
+ // const Real dt    = es.parameters.get<Real>("dt");
+  // const Real time  = es.parameters.get<Real>("time");
+ // const Real theta = 1.;
+    
+    DenseMatrix<Real> stiff;
+  DenseVector<Real> res;
+  VectorValue<Gradient> grad_u_mat;
+#if INCOMPRESSIBLE
+  DenseVector<Real> p_stiff;
+  DenseVector<Real> p_res;
+    NonlinearNeoHookeCurrentConfig material(dphi,psi);
+#endif
+    
+#if COMPRESSIBLE
+    NonlinearNeoHookeCurrentConfig material(dphi);
+    
+#endif
+    
+    
+      // Just calculate jacobian contribution when we need to
+  material.calculate_linearized_stiffness = true;
+  
+  
+  // Now we will loop over all the elements in the mesh that
+  // live on the local processor. We will compute the element
+  // matrix and right-hand-side contribution.  Since the mesh
+  // will be refined we want to only consider the ACTIVE elements,
+  // hence we use a variant of the \p active_elem_iterator.
+  MeshBase::const_element_iterator       el     = mesh.active_local_elements_begin();
+  const MeshBase::const_element_iterator end_el = mesh.active_local_elements_end(); 
+  
+
+
+  for ( ; el != end_el; ++el)
+    {    
+
+
+
+      // Store a pointer to the element we are currently
+      // working on.  This allows for nicer syntax later.
+      const Elem* elem = *el;
+      
+
+  	//cout << "element x co-ord: \t"<< elem(1) << "\n";
+
+      // Get the degree of freedom indices for the
+      // current element.  These define where in the global
+      // matrix and right-hand-side this element will
+      // contribute to.
+      dof_map.dof_indices (elem, dof_indices);
+      dof_map.dof_indices (elem, dof_indices_u, u_var);
+      dof_map.dof_indices (elem, dof_indices_v, v_var);
+      dof_map.dof_indices (elem, dof_indices_w, w_var);
+#if INCOMPRESSIBLE
+      dof_map.dof_indices (elem, dof_indices_p, p_var);
+#endif
+      const unsigned int n_dofs   = dof_indices.size();
+      const unsigned int n_u_dofs = dof_indices_u.size(); 
+      const unsigned int n_v_dofs = dof_indices_v.size(); 
+      const unsigned int n_w_dofs = dof_indices_w.size(); 
+#if INCOMPRESSIBLE
+      const unsigned int n_p_dofs = dof_indices_p.size();
+#endif
+      // Compute the element-specific data for the current
+      // element.  This involves computing the location of the
+      // quadrature points (q_point) and the shape functions
+      // (phi, dphi) for the current element.
+
+
+
+      fe_vel->reinit  (elem);
+
+#if INCOMPRESSIBLE
+      fe_pres->reinit (elem);
+#endif
+
+
+
+      // Zero the element matrix and right-hand side before
+      // summing them.  We use the resize member here because
+      // the number of degrees of freedom might have changed from
+      // the last element.  Note that this will be the case if the
+      // element type is different (i.e. the last element was a
+      // triangle, now we are on a quadrilateral).
+      Ke.resize (n_dofs, n_dofs);
+      Fe.resize (n_dofs);
+
+
+      // Reposition the submatrices...  The idea is this:
+      //
+      //         -           -          -  -
+      //        | Kuu Kuv Kup |        | Fu |
+      //   Ke = | Kvu Kvv Kvp |;  Fe = | Fv |
+      //        | Kpu Kpv Kpp |        | Fp |
+      //         -           -          -  -
+      //
+      // The \p DenseSubMatrix.repostition () member takes the
+      // (row_offset, column_offset, row_size, column_size).
+      // 
+      // Similarly, the \p DenseSubVector.reposition () member
+      // takes the (row_offset, row_size)
+      Kuu.reposition (u_var*n_u_dofs, u_var*n_u_dofs, n_u_dofs, n_u_dofs);
+      Kuv.reposition (u_var*n_u_dofs, v_var*n_u_dofs, n_u_dofs, n_v_dofs);
+      Kuw.reposition (u_var*n_u_dofs, w_var*n_u_dofs, n_u_dofs, n_w_dofs);
+      #if INCOMPRESSIBLE
+      Kup.reposition (u_var*n_u_dofs, p_var*n_u_dofs, n_u_dofs, n_p_dofs);
+      #endif
+      Kvu.reposition (v_var*n_v_dofs, u_var*n_v_dofs, n_v_dofs, n_u_dofs);
+      Kvv.reposition (v_var*n_v_dofs, v_var*n_v_dofs, n_v_dofs, n_v_dofs);
+      Kvw.reposition (v_var*n_v_dofs, w_var*n_v_dofs, n_v_dofs, n_w_dofs);
+      #if INCOMPRESSIBLE
+      Kvp.reposition (v_var*n_v_dofs, p_var*n_v_dofs, n_v_dofs, n_p_dofs);
+      #endif
+      
+      Kwu.reposition (w_var*n_w_dofs, u_var*n_w_dofs, n_w_dofs, n_u_dofs);
+      Kwv.reposition (w_var*n_w_dofs, v_var*n_w_dofs, n_w_dofs, n_v_dofs);
+      Kww.reposition (w_var*n_w_dofs, w_var*n_w_dofs, n_w_dofs, n_w_dofs);
+      #if INCOMPRESSIBLE
+      Kwp.reposition (w_var*n_w_dofs, p_var*n_w_dofs, n_w_dofs, n_p_dofs);
+      
+      
+      Kpu.reposition (p_var*n_u_dofs, u_var*n_u_dofs, n_p_dofs, n_u_dofs);
+      Kpv.reposition (p_var*n_u_dofs, v_var*n_u_dofs, n_p_dofs, n_v_dofs);
+      Kpw.reposition (p_var*n_u_dofs, w_var*n_u_dofs, n_p_dofs, n_w_dofs);
+      Kpp.reposition (p_var*n_u_dofs, p_var*n_u_dofs, n_p_dofs, n_p_dofs);
+      #endif
+      
+      Fu.reposition (u_var*n_u_dofs, n_u_dofs);
+      Fv.reposition (v_var*n_u_dofs, n_v_dofs);
+      Fw.reposition (w_var*n_u_dofs, n_w_dofs);
+      #if INCOMPRESSIBLE
+      Fp.reposition (p_var*n_u_dofs, n_p_dofs);
+      #endif
+      // Now we will build the element matrix and right-hand-side.
+      // Constructing the RHS requires the solution and its
+      // gradient from the previous timestep.  This must be
+      // calculated at each quadrature point by summing the
+      // solution degree-of-freedom values by the appropriate
+      // weight functions.
+
+
+// Get a reference to the auxiliary system
+  //TransientExplicitSystem& aux_system = es.get_system<
+   //   TransientExplicitSystem>("solid");
+      
+      System& aux_system = es.get_system<System>("solid");
+      
+
+  std::vector<unsigned int> undefo_index;
+
+//std::cout<<"dphi[3][qp] "<<dphi[3][3]<< std::endl;
+
+      for (unsigned int qp=0; qp<qrule.n_points(); qp++)
+        {
+
+
+          // Values to hold the solution & its gradient at the previous timestep.
+          Number   u = 0.;//, u_old = 0.;
+          Number   v = 0.;//, v_old = 0.;
+	 Number   w = 0.;//, w_old = 0.;
+	  #if INCOMPRESSIBLE
+	  Number   p = 0.;
+	  #endif
+          Gradient grad_u;//, grad_u_old;
+          Gradient grad_v;//, grad_v_old;
+          Gradient grad_w;//, grad_w_old;
+
+          // Compute the velocity & its gradient from the previous timestep
+          // and the old Newton iterate.
+          for (unsigned int l=0; l<n_u_dofs; l++)
+            {
+
+
+              // From the previous Newton iterate:
+              u += phi[l][qp]*newton_update.current_solution (dof_indices_u[l]); 
+              v += phi[l][qp]*newton_update.current_solution (dof_indices_v[l]);
+	      w += phi[l][qp]*newton_update.current_solution (dof_indices_w[l]);
+            grad_u.add_scaled (dphi[l][qp],newton_update.current_solution (dof_indices_u[l]));
+             grad_v.add_scaled (dphi[l][qp],newton_update.current_solution (dof_indices_v[l]));
+	    grad_w.add_scaled (dphi[l][qp],newton_update.current_solution (dof_indices_w[l]));
+            }   
+	grad_u_mat(0)=grad_u;
+	grad_u_mat(1)=grad_v;
+	grad_u_mat(2)=grad_w;
+//std::cout<<"grad_u "<< grad_u<<std::endl;
+	
+
+grad_u_mat(0) = grad_u_mat(1) = grad_u_mat(2) = 0;
+    for (unsigned int d = 0; d < dim; ++d) {
+      std::vector<Number> u_undefo;
+      aux_system.get_dof_map().dof_indices(elem, undefo_index,d);
+      aux_system.current_local_solution->get(undefo_index, u_undefo);
+      for (unsigned int l = 0; l != n_u_dofs; l++)
+        grad_u_mat(d).add_scaled(dphi[l][qp], u_undefo[l]); // u_current(l)); // -
+    }
+    
+          
+            #if INCOMPRESSIBLE
+            // Compute the current pressure value at this quadrature point.
+          for (unsigned int l=0; l<n_p_dofs; l++)
+            {
+              p += psi[l][qp]*newton_update.current_solution (dof_indices_p[l]);
+            }
+	  #endif
+	  
+#if INCOMPRESSIBLE 
+material.init_for_qp(grad_u_mat, p, qp);
+#endif 
+
+#if COMPRESSIBLE 
+Number p_comp=0;
+material.init_for_qp(grad_u_mat,p_comp, qp);
+#endif
+
+          for (unsigned int i=0; i<n_u_dofs; i++)
+            {
+
+      res.resize(dim);
+      material.get_residual(res, i);
+      res.scale(JxW[qp]);
+
+      
+       Real E=10;
+       Real nu=0.3;
+       
+       Real mu = E / (2.0 * (1.0 + nu));
+       Real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
+      Real C=0.5;
+
+      Real X1=ref_sys.current_solution(dof_indices_u[i]);
+      Real val = 2*C*(0.5*lambda + mu)*(1+pow((1+2*C*X1),-3));//+2*(2*lambda*C + 4*C*C*lambda*X1);
+      val=0;
+     // val = -4*(X1*X1*X1*X1*X1*X1);
+     // std::cout<<"X1= " << X1<< "  val = "<< val <<std::endl;
+      
+      	      Fu(i) += res(0) -0.0*JxW[qp]*phi[i][qp];              
+              Fv(i) += res(1) ; 
+	      Fw(i) += res(2);       
+              // Matrix contributions for the uu and vv couplings.
+              for (unsigned int j=0; j<n_u_dofs; j++)
+                {
+                      material.get_linearized_stiffness(stiff, i, j);
+		      stiff.scale(JxW[qp]);
+
+		      Kuu(i,j)+=  stiff(u_var, u_var) ;//+ 2*JxW[qp]*phi[i][qp]*phi[j][qp] ;
+		      Kuv(i,j)+=  stiff(u_var, v_var);
+		      Kuw(i,j)+=  stiff(u_var, w_var);
+		      
+		      Kvu(i,j)+=  stiff(v_var, u_var);
+		      Kvv(i,j)+=  stiff(v_var, v_var);
+		      Kvw(i,j)+=  stiff(v_var, w_var);
+
+		      Kwu(i,j)+=  stiff(w_var, u_var);
+		      Kwv(i,j)+=  stiff(w_var, v_var);
+		      Kww(i,j)+=  stiff(w_var, w_var); 
+                }
+            }
+
+#if INCOMPRESSIBLE
+           for (unsigned int i = 0; i < n_p_dofs; i++) {
+	material.get_p_residual(p_res, i);
+		      p_res.scale(JxW[qp]);
+        Fp(i) += p_res(0);
+	  }
+    
+
+    for (unsigned int i = 0; i < n_u_dofs; i++) {
+          for (unsigned int j = 0; j < n_p_dofs; j++) {
+	  material.get_linearized_uvw_p_stiffness(p_stiff, i, j);
+		      p_stiff.scale(JxW[qp]);
+          // for (unsigned int d = 0; d < dim; ++d) {
+            Kup(i, j) += p_stiff(0);
+	    Kvp(i, j) += p_stiff(1);
+            Kwp(i, j) += p_stiff(2);
+	 //  }
+	  }
+    }
+    
+
+
+    for (unsigned int i = 0; i < n_p_dofs; i++) {
+
+          for (unsigned int j = 0; j < n_u_dofs; j++) {
+	 material.get_linearized_p_uvw_stiffness(p_stiff, i, j);
+		      p_stiff.scale(JxW[qp]);
+	 //  for (unsigned int d = 0; d < dim; ++d) {
+            Kpu(i, j) += p_stiff(0);
+	    Kpv(i, j) += p_stiff(1);
+            Kpw(i, j) += p_stiff(2);
+	 // }
+       }
+    }
+
+#endif
+
+
+        }
+        
+#if PENALTY
+	test(99999);
+for (unsigned int s=0; s<elem->n_sides(); s++){
+   if (elem->neighbor(s) == NULL)
+   {		
+   AutoPtr<Elem> side (elem->build_side(s));
+    for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+
+     
+
+for (unsigned int n=0; n<elem->n_nodes(); n++){
+      double x_val_ref = ref_sys.current_solution(dof_indices_u[n]);  
+      double y_val_ref = ref_sys.current_solution(dof_indices_v[n]);
+      double z_val_ref = ref_sys.current_solution(dof_indices_w[n]);
+      double rsquared = x_val_ref*x_val_ref + y_val_ref*y_val_ref + z_val_ref*z_val_ref;
+
+      double old_rad = 9;
+      double new_rad = 9;
+      double scale_fac_squared = pow(new_rad,2)/rsquared;
+      double scale_fac = new_rad/pow(rsquared,0.5);
+      scale_fac=1.2;
+
+/*  Check pressures on inner and outer sphere.
+  if(elem->is_vertex(n)){
+ std::cout<<"rsquared= "<<rsquared<<"   pressure " <<newton_update.current_solution(dof_indices_p[n])<<std::endl;
+ std::cout<<"x_val_ref " <<x_val_ref<<" y_val_ref " <<y_val_ref<<" z_val_ref " <<z_val_ref <<std::endl;
+}
+*/
+  if ((elem->node(n) == side->node(ns)) && (rsquared<70 )  )
+  {
+    
+     Point p_bc=get_expanding_sphere_bcs(es, elem, n,scale_fac);
+     
+     
+  // std::cout<<"  n      " << n <<  std::endl;
+  //  std::cout<<"  p_bc      " << p_bc <<  std::endl;
+  // std::cout<<"  p_curr*scale " << scale_fac*(elem->point(n)) <<  std::endl; 
+ //std::cout<<"x_val_ref " <<x_val_ref<<" y_val_ref " <<y_val_ref<<" z_val_ref " <<z_val_ref <<std::endl;
+
+     
+ Real u_value = newton_update.current_solution(dof_indices_u[n])-p_bc(0);
+ Real v_value = newton_update.current_solution(dof_indices_v[n])-p_bc(1);
+ Real w_value = newton_update.current_solution(dof_indices_w[n])-p_bc(2);
+
+
+ // u_value = newton_update.current_solution(dof_indices_u[n])-x_val_ref*scale_fac;
+ // v_value = newton_update.current_solution(dof_indices_v[n])-y_val_ref*scale_fac;
+ // w_value = newton_update.current_solution(dof_indices_w[n])-z_val_ref*scale_fac;
+
+
+//std::cout<<"  p_bc      " << p_bc  <<  std::endl;
+//std::cout<<"  u_value       " << u_value  <<  std::endl;
+
+const Real penalty = 1.e10;
+
+                        Kuu(n,n) += penalty;
+                        Kvv(n,n) += penalty;
+			Kww(n,n) += penalty;
+                        
+			Fu(n) += penalty*u_value;
+                        Fv(n) += penalty*v_value;
+			Fw(n) += penalty*w_value;
+    } //end of if x_val>bla
+   } // end n=0; n<elem->n_nodes(); n++ 
+    }// end ns=0; ns<side->n_nodes(); ns++
+  }//end elem->neighbor(s) == NULL 
+ }// end s=0; s<elem->n_sides(); s++
+ #endif
+
+  #if TRACTION_BC
+	test(999990);
+ const Real penalty = 1.e10;
+  
+          for (unsigned int s=0; s<elem->n_sides(); s++){
+            if (elem->neighbor(s) == NULL)
+              {
+		AutoPtr<Elem> side (elem->build_side(s));
+
+    		Node *noode = side->get_node(0);
+    	unsigned int source_dof = noode->dof_number(1, 0, 0);
+
+      Real x_value = ref_sys.current_solution(noode->dof_number(1, 0, 0));
+      Real y_value = ref_sys.current_solution(noode->dof_number(1, 1, 0));
+      Real z_value = ref_sys.current_solution(noode->dof_number(1, 2, 0));
+
+  const std::vector<std::vector<Real> >&  phi_face =                             fe_face->get_phi();
+  
+                const std::vector<std::vector<RealGradient> >& dphi_face =
+                                fe_face->get_dphi();
+  
+                const std::vector<Real>& JxW_face = fe_face->get_JxW();
+                                                                                 
+                const std::vector<Point>& qface_point = fe_face->get_xyz();
+  
+                const std::vector<Point>& face_normals =
+                                fe_face->get_normals();
+
+                fe_face->reinit(elem,s);  
+Real rsq=    x_value*x_value + y_value*y_value +z_value*z_value;         
+//std::cout<< "rsq= "<<rsq<<std::endl;
+		if(((rsq > 20))&& x_value>6)
+		{
+                for (unsigned int qp=0; qp<qface->n_points(); qp++)
+                  {
+		   //  std::cout << "qface_point  " << qface_point[qp] <<std::endl;
+		   //  std::cout << "face_normals  " << face_normals[qp] <<std::endl;
+                    const Number value = +1.0;
+                                                         
+                    for (unsigned int i=0; i<phi_face.size(); i++){
+
+                      Fu(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
+                      Fv(i) += - JxW_face[qp]*value*face_normals[qp](1)*phi_face[i][qp];
+                      Fw(i) += - JxW_face[qp]*value*face_normals[qp](2)*phi_face[i][qp];
+		    }
+                    for (unsigned int i=0; i<phi_face.size(); i++){
+                      for (unsigned int j=0; j<phi_face.size(); j++){
+Kuu(i,j) += value*face_normals[qp](0)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+Kvv(i,j) += value*face_normals[qp](1)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+Kww(i,j) += value*face_normals[qp](2)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+		      }
+		    }
+                  
+		}
+		}                  
+                  
+              }
+	  }
+#endif
+ 
+
+
+      // If this assembly program were to be used on an adaptive mesh,
+      // we would have to apply any hanging node constraint equations
+      dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
+
+
+      // The element matrix and right-hand-side are now built
+      // for this element.  Add them to the global matrix and
+      // right-hand-side vector.  The \p SparseMatrix::add_matrix()
+      // and \p NumericVector::add_vector() members do this for us.
+      newton_update.matrix->add_matrix (Ke, dof_indices);
+
+
+      newton_update.rhs->add_vector    (Fe, dof_indices);
+
+    } // end of element loop
+
+	newton_update.rhs->close();
+     	newton_update.matrix->close();
+//std::cout<<"Before Dirichle BCs rhs->l2_norm () "<<newton_update.rhs->l2_norm ()<<std::endl;
+
+#if DIRICHLET_CLASSIC
+	test(9999900);
+//Apply Dirichlet Bcs
+//Need to loop through all elements again !
+
+
+MeshBase::const_element_iterator       el2     = mesh.active_local_elements_begin();
+  const MeshBase::const_element_iterator end_el2 = mesh.active_local_elements_end(); 
+  
+
+
+
+  for ( ; el2 != end_el2; ++el2)
+    {    
+      const Elem* elem = *el2;
+for (unsigned int s=0; s<elem->n_sides(); s++){
+   if (elem->neighbor(s) == NULL)
+   {		
+   AutoPtr<Elem> side (elem->build_side(s));
+    for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+
+     for (unsigned int n=0; n<elem->n_nodes(); n++){
+
+        Node *node = elem->get_node(n);
+	Point p;
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+      	Real value = ref_sys.current_solution(source_dof);
+      	p(d)=value;
+   	}
+
+double rsquared = p(0)*p(0) + p(1)*p(1) + p(2)*p(2);
+
+      double scale_fac =1.0;
+
+  if ((elem->node(n) == side->node(ns)) && (rsquared<30 )  )
+  {
+/*
+ if(elem->is_vertex(n)){
+std::cout<<" p " <<p<<std::endl;
+ std::cout<<"rsquared= "<<rsquared<<"   pressure " <<newton_update.current_solution(dof_indices_p[n])<<std::endl;
+}
+*/
+
+
+	//std::cout<<" node "<<(*node)<<std::endl;
+   for (unsigned int d = 0; d < 3; ++d) {
+
+      //const Real penalty = 1.e10;
+
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+
+   	Real value = newton_update.current_solution(source_dof) - scale_fac*ref_sys.current_solution(source_dof);
+
+        Point p_bc=get_expanding_sphere_bcs(es, elem, n,scale_fac);
+	value = newton_update.current_solution(source_dof) - p_bc(d);
+	//std::cout<<value<<std::endl;
+	std::vector< int > rows(1,source_dof);
+
+
+	newton_update.rhs->set(source_dof,value);
+
+	newton_update.matrix->zero_rows(rows, 1.0);
+
+
+//	int n_col=newton_update.matrix->n();
+//for (unsigned int j=0; j<newton_update.matrix->n(); j++){
+//     newton_update.matrix->set(source_dof,j) = 0.;
+//}
+
+	//for (unsigned int k=0; k<=newton_update.matrix->n(); k++){
+      	//newton_update.matrix->set(k,source_dof,0);
+	//std::cout<<"k "<<k<<std::endl;	
+	//}
+
+      	//newton_update.matrix->set(source_dof,source_dof,penalty);	
+	
+   	}
+
+}
+}}}}}
+#endif
+
+test(7);
+      newton_update.rhs->close();
+     	newton_update.matrix->close();
+std::cout<<"newton_update.rhs->l2_norm () "<<newton_update.rhs->l2_norm ()<<std::endl;
+//std::cout<<"Ke.l2_norm () "<<Ke.l2_norm ()<<std::endl;
+
+test(119);
+  return;
+}
+
+
+
