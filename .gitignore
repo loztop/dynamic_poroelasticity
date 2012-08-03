@@ -1,5 +1,7 @@
 *.e
 *.md
+*.C~
+
 systems_of_equations_ex1-dbg
 systems_of_equations_ex1-opt
 
