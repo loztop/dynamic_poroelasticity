@@ -1,36 +1,39 @@
 #include "defines.h"
 #include "assemble.h"
 #include "nonlinear_neohooke_cc.h"
-//#include "solid_system.h"
+#include "solid_system.h"
 #include "poro_elastic_cc.h"
 
 
 // The matrix assembly function to be called at each time step to
 // prepare for the linear solve.
-void assemble_pressure_lol (EquationSystems& es,
+void assemble_pressure (EquationSystems& es,
                       const std::string& system_name)
 {
 
-
-    libmesh_assert (system_name == "pressure-system-lol");
+    libmesh_assert (system_name == "pressure-system");
     
     const MeshBase& mesh = es.get_mesh();
     
     const unsigned int dim = mesh.mesh_dimension();
     
     LinearImplicitSystem & system =
-      es.get_system<LinearImplicitSystem> ("pressure-system-lol");
+      es.get_system<LinearImplicitSystem> ("pressure-system");
   
-    System& aux_system = es.get_system<System>("Reference-Configuration");
+  #if FLUID
+ TransientLinearImplicitSystem & fluid_system =
+    es.get_system<TransientLinearImplicitSystem> ("fluid-system");
+#endif
 
-  
-  TransientLinearImplicitSystem &  fluid_vel_system =
-    es.get_system<TransientLinearImplicitSystem> ("fluid-system-vel");
 
-    const unsigned int u_var = system.variable_number ("fluid_m");
-    const unsigned int v_var = system.variable_number ("Jacobian");
-    const unsigned int w_var = system.variable_number ("res_aux1");
-    const unsigned int p_var = system.variable_number ("res_aux2");
+
+
+
+
+    const unsigned int u_var = system.variable_number ("fluid_pressure");
+    const unsigned int v_var = system.variable_number ("jacobian");
+    const unsigned int w_var = system.variable_number ("p_aux1");
+    const unsigned int p_var = system.variable_number ("p_aux2");
     
     FEType fe_vel_type = system.variable_type(u_var);
     
@@ -80,12 +83,8 @@ void assemble_pressure_lol (EquationSystems& es,
   std::vector<unsigned int> dof_indices_w;
   std::vector<unsigned int> dof_indices_p;
         const Real dt    = es.parameters.get<Real>("dt");
-
-std::cout<<" dt " << dt<< std::endl;
    unsigned int step    = es.parameters.get<unsigned int>("step");
-           const Real non_lin_step    = es.parameters.get<Real>("non_lin_step");
-std::cout<<" non_lin_step " << non_lin_step<< std::endl;
-std::vector<unsigned int> undefo_index;
+    const Real non_lin_step    = es.parameters.get<Real>("non_lin_step");
 
 
   
@@ -94,14 +93,9 @@ std::vector<unsigned int> undefo_index;
     
     for ( ; el != end_el; ++el)
     {    
-      // Store a pointer to the element we are currently
-      // working on.  This allows for nicer syntax later.
+
       const Elem* elem = *el;
-      
-      // Get the degree of freedom indices for the
-      // current element.  These define where in the global
-      // matrix and right-hand-side this element will
-      // contribute to.
+
       dof_map.dof_indices (elem, dof_indices);
       dof_map.dof_indices (elem, dof_indices_u, u_var);
       dof_map.dof_indices (elem, dof_indices_v, v_var);
@@ -113,10 +107,8 @@ std::vector<unsigned int> undefo_index;
       const unsigned int n_v_dofs = dof_indices_v.size(); 
       const unsigned int n_w_dofs = dof_indices_w.size(); 
       const unsigned int n_p_dofs = dof_indices_p.size();
-      
       fe_vel->reinit  (elem);
       fe_pres->reinit (elem);
-
       Ke.resize (n_dofs, n_dofs);
       Fe.resize (n_dofs);
 
@@ -149,8 +141,29 @@ std::vector<unsigned int> undefo_index;
       for (unsigned int qp=0; qp<qrule.n_points(); qp++)
         {
 
-VectorValue<Gradient> grad_u_mat;  
-  std::vector<unsigned int> undefo_index; 
+   TransientLinearImplicitSystem & last_non_linear_soln =
+    es.get_system<TransientLinearImplicitSystem> ("Last-non-linear-soln");
+      System& aux_system = es.get_system<System>("Reference-Configuration");
+Real   p_solid = 0.;
+for (unsigned int l=0; l<n_p_dofs; l++)
+            {
+         p_solid += psi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_p[l]);
+            }
+
+Real   w_disp = 0.;
+for (unsigned int l=0; l<n_w_dofs; l++)
+       {
+         w_disp += phi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_w[l]);
+      }
+
+Real   u_disp = 0.;
+for (unsigned int l=0; l<n_w_dofs; l++)
+       {
+         u_disp += phi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_u[l]);
+      }
+
+    VectorValue<Gradient> grad_u_mat;  
+          std::vector<unsigned int> undefo_index; 
   grad_u_mat(0) = grad_u_mat(1) = grad_u_mat(2) = 0;
     for (unsigned int d = 0; d < dim; ++d) {
       std::vector<Number> u_undefo;
@@ -161,24 +174,51 @@ VectorValue<Gradient> grad_u_mat;
       }
     }
 
-Number   p_fluid = 0.;
-for (unsigned int l=0; l<n_p_dofs; l++)
-{
-              p_fluid += psi[l][qp]*fluid_vel_system.current_local_solution->el(dof_indices_p[l]);
-}
-
-Real p_solid=0;
+Real J; 
 Real m_old=0;
-PoroelasticConfig material(dphi,phi);
-material.init_for_qp(grad_u_mat, p_solid, 0, m_old,p_fluid);
-Real J=material.J;
-#if CHAP
-Real mchap=material.mchap;
+Real m_current=0;
+
+#if FLUID
+for (unsigned int l=0; l<n_u_dofs; l++)
+{
+ m_old += phi[l][qp]*fluid_system.old_local_solution->el(dof_indices_u[l]);
+ m_current += phi[l][qp]*fluid_system.current_local_solution->el(dof_indices_u[l]);
+}
 #endif
 
+#if PORO
+PoroelasticConfig material(dphi,phi);
+#endif
 
-          // Assemble the u-velocity row
-          // uu coupling
+#if !PORO && INCOMPRESSIBLE
+NonlinearNeoHookeCurrentConfig material(dphi,phi);
+#endif
+
+#if !PORO && COMPRESSIBLE
+NonlinearNeoHookeCurrentConfig material(dphi);
+material.init_for_qp(grad_u_mat, p_solid, 0);
+#endif
+
+#if INCOMPRESSIBLE
+Real p_fluid=0;
+material.init_for_qp(grad_u_mat, p_solid, 0, m_old,p_fluid);
+#endif
+
+#if PORO
+material.calculate_fluid_pressure();
+p_fluid=material.p_fluid;
+#endif
+if( (step ==70) && (non_lin_step <1)  ) {
+  std::cout << "material.C " << material.C << std::endl;
+  std::cout << "material.I_3 " << material.I_3 << std::endl;
+  std::cout << "material.I_1 " << material.I_1 << std::endl;
+  std::cout << "material.D " << material.D << std::endl;
+  std::cout << "material.m " << material.m << std::endl;
+  std::cout << "material.f " << material.f << std::endl;
+  std::cout << "material.p_solid" << material.p_solid << std::endl;
+ // std::cout << "material.p_fluid " << material.p_fluid << std::endl;
+}
+
           for (unsigned int i=0; i<n_u_dofs; i++)
             for (unsigned int j=0; j<n_u_dofs; j++)
               Kuu(i,j) += JxW[qp]*(phi[i][qp]*phi[j][qp]);
@@ -187,29 +227,53 @@ Real mchap=material.mchap;
             for (unsigned int j=0; j<n_v_dofs; j++)
               Kvv(i,j) += JxW[qp]*(phi[i][qp]*phi[j][qp]);
 
-             for (unsigned int i=0; i<n_v_dofs; i++)
-            for (unsigned int j=0; j<n_v_dofs; j++)
+       for (unsigned int i=0; i<n_v_dofs; i++)
+            for (unsigned int j=0; j<n_v_dofs; j++){
               Kww(i,j) += JxW[qp]*(phi[i][qp]*phi[j][qp]);
-        
-          for (unsigned int j=0; j<n_u_dofs; j++)
-            #if CHAP
-             Fu(j) += JxW[qp]*phi[j][qp]*mchap;
-          #endif
-          for (unsigned int j=0; j<n_v_dofs; j++)
-             Fv(j) += JxW[qp]*phi[j][qp]*J;
+             //  Kww(i,j) += -JxW[qp]*(phi[i][qp]*dphi[j][qp](0));
 
-           for (unsigned int j=0; j<n_w_dofs; j++)
-             Fw(j) += JxW[qp]*phi[j][qp]*0;
+            }
+       for (unsigned int i=0; i<n_p_dofs; i++)
+            for (unsigned int j=0; j<n_p_dofs; j++)
+              Kpp(i,j) += JxW[qp]*(psi[i][qp]*psi[j][qp]);
+       #if PORO || FLUID
+          for (unsigned int j=0; j<n_u_dofs; j++){
+        Fu(j) += JxW[qp]*phi[j][qp]*p_fluid;
+           }
+      #endif
 
+          for (unsigned int j=0; j<n_v_dofs; j++){
+             Fv(j) += JxW[qp]*phi[j][qp]*material.J;
+           // Fv(j) += -JxW[qp](dphi[j][qp](0) + dphi[j][qp](1) +dphi[j][qp](2)   )*1000+78;
+          }
+
+
+           for (unsigned int j=0; j<n_v_dofs; j++){
+             //Fw(j) += -JxW[qp](dphi[j][qp](0) + dphi[j][qp](1) +dphi[j][qp](2))*1000;
+            // Fw(j) += -JxW[qp]*(0*dphi[j][qp](0) + 1*dphi[j][qp](1) +0*dphi[j][qp](2))*1;
+
+           // Fw(j) += JxW[qp]*(phi[j][qp])*1;
+
+#if FLUID
+           for (unsigned int i=0; i<n_v_dofs; i++){
+            Fw(j) += JxW[qp]*(phi[j][qp])*dphi[i][qp](1)*p_fluid;
+           }
+#endif
+            }
+
+         for (unsigned int j=0; j<n_p_dofs; j++){
+             Fp(j) += JxW[qp]*psi[j][qp]*(p_solid);
+            //  Fp(j) += JxW[qp]*psi[j][qp]*p_solid;
+
+          }
         } // end of the quadrature point qp-loop
 
         dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
-  
         system.matrix->add_matrix (Ke, dof_indices);
         system.rhs->add_vector    (Fe, dof_indices);
       } // end of element loop
     
-    return;
+    return;    
   }
 
 

@@ -1,7 +1,7 @@
 #include "defines.h"
 #include "assemble.h"
 #include "nonlinear_neohooke_cc.h"
-#include "solid_system.h"
+//#include "solid_system.h"
 #include "poro_elastic_cc.h"
 
 #if FLUID_VEL

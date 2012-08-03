@@ -39,7 +39,7 @@
 #include "mesh_data.h"
 #include <tecplot_io.h>
 //New header files
-//#include "solid_system.h"
+#include "solid_system.h"
 #include "functions.h"
 
 #include <time.h>

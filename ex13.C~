@@ -3,7 +3,7 @@
 
 #include "defines.h"
 #include "assemble.h"
-//#include "solid_system.h"
+#include "solid_system.h"
 #include <iostream>
 #include <fstream>
 //#define ELEMENT_TYPE LAGRANGE 

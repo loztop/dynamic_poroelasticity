@@ -42,7 +42,7 @@
 
 
 #include "assemble.h"
-//#include "solid_system.h"
+#include "solid_system.h"
 #include <petsc_linear_solver.h>
 using namespace std;
 
