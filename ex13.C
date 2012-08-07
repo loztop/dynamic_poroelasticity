@@ -59,7 +59,7 @@ outFile.open("results.txt");        // Step #3 - Open outFile.
 #endif
 
 //Some solver Options
-const unsigned int n_nonlinear_steps = 15;
+const unsigned int n_nonlinear_steps = 25;
 const Real nonlinear_tolerance       = 1.e-1;
 const Real initial_linear_solver_tol = 1.e-8;
 
@@ -75,7 +75,7 @@ MeshData mesh_data(mesh);
 
 #if CUBE
  MeshTools::Generation::build_cube (mesh,
-                                       4, 4, 4,
+                                       3, 3, 3,
                                        0., 1.5,	
                                        0., 1.5,
 				                               0., 1.5,
@@ -207,8 +207,8 @@ Real time     = 0;
 unsigned int n_timesteps = 1;
 
 #if DYNAMIC
-n_timesteps = 3;
-dt = 0.9;
+n_timesteps = 50;
+dt = 0.01;
 ExodusII_IO exo= ExodusII_IO(equation_systems.get_mesh());
 #if WRITE_TEC
 TecplotIO tec= TecplotIO(equation_systems.get_mesh());
@@ -431,15 +431,26 @@ test(3);
 
 #if SOLID_VELOCITY //This is to compute Vn=(Un+1^{k}-Un)/dtn-1 !! is this strange ?
 //Calculate the new velocity using a classic finite difference 
+
+//Should be dt_n_minus_1 instead of dt
   velocity.solution->zero(); 
-  velocity.solution->add(1/dt_n_minus_1,*last_non_linear_soln.current_local_solution);
-  velocity.solution->add(-1/dt_n_minus_1,*last_non_linear_soln.old_local_solution);
+  velocity.solution->add(1.0/dt_n_minus_1,*last_non_linear_soln.current_local_solution);
+  velocity.solution->add(-1.0/dt_n_minus_1,*last_non_linear_soln.old_local_solution);
   velocity.solution->close();
   velocity.current_local_solution->zero(); 
-  velocity.current_local_solution->add(1/dt_n_minus_1,*last_non_linear_soln.current_local_solution);
-  velocity.current_local_solution->add(-1/dt_n_minus_1,*last_non_linear_soln.old_local_solution);
+  velocity.current_local_solution->add(1.0/dt_n_minus_1,*last_non_linear_soln.current_local_solution);
+  velocity.current_local_solution->add(-1.0/dt_n_minus_1,*last_non_linear_soln.old_local_solution);
   velocity.current_local_solution->close();
   velocity.update();
+
+  std::cout<<"dt " <<  dt <<std::endl;
+
+
+  std::cout<<" last_non_linear_soln current " <<  (*last_non_linear_soln.current_local_solution)(123)<<std::endl;
+  std::cout<<" last_non_linear_soln old " <<  (*last_non_linear_soln.old_local_solution)(123)<<std::endl;
+
+  std::cout<<" velocity " <<  (*velocity.current_local_solution)(123)<<std::endl;
+
   dt_n_minus_1=dt;
 #endif
 test(4);
@@ -514,7 +525,7 @@ Real norm_delta = change_in_newton_update->l2_norm();
 
 Real norm_delta_fluid = 999.999;
 
- if ((norm_delta < 0.1) ){
+ if ((norm_delta < 10.1) ){
 
   std::cout<<" Solving fluid " <<  std::endl;
 
@@ -709,7 +720,7 @@ outFile<< endl;
   #if DAHOAM 
   file_name << "/home/lorenz/Dropbox/libresults/";
   #endif
-  file_name << "poro_fill";
+  file_name << "poro_newtest_";
   file_name << std::setw(2) << std::setfill('0') << t_step;
   file_name << ".e-s.";
   file_name << std::setw(3) << std::setfill('0') << t_step+1;

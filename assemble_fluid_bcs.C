@@ -40,7 +40,7 @@ std::vector< int > pressure_rows;
  test(1);
  //Build face
  #if NEUMANN_PRESSURE
-AutoPtr<FEBase> fe_face (FEBase::build(3, press_vel_type));             
+AutoPtr<FEBase> fe_face (FEBase::build(3, fe_vel_type));             
 AutoPtr<QBase> qface(press_vel_type.default_quadrature_rule(3-1));  
 fe_face->attach_quadrature_rule (qface.get());
 
@@ -170,17 +170,19 @@ for (unsigned int ns=0; ns<side->n_nodes(); ns++)
     for (unsigned int qp=0; qp<qface->n_points(); qp++)
     {       
 
-     Real value = progress*0.1  ;
+   Real value=0;
+    
+   // value = progress*0.1  ;
 
      #if CHAP_SWELL
-      //value = 0.2*(1-exp(-pow(time,2.0)/0.25)) ;
+      value = 5*(1-exp(-pow(time,2.0)/0.25)) ;
      #endif
 
       //value = 1;
       for (unsigned int i=0; i<phi_face.size(); i++){
         
-        #if MASS_NEUMANN_PRESSURE //In Chapelle there is now neumann pressure Bc in the mass concservation eqn.
-        Fp(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
+        #if MASS_NEUMANN_PRESSURE //In Chapelle there is no neumann pressure Bc in the mass concservation eqn.
+      //  Fp(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
         #endif
 
         #if MOMENTUM_NEUMANN_PRESSURE
@@ -191,6 +193,30 @@ for (unsigned int ns=0; ns<side->n_nodes(); ns++)
         }    
     } //end qp
   } //end if 
+
+
+/*
+  if ((elem->node(n) == side->node(ns)) && (p(2)<0.01)  )
+{
+    for (unsigned int qp=0; qp<qface->n_points(); qp++)
+    {       
+
+   Real value=time*0.00;
+
+      for (unsigned int i=0; i<phi_face.size(); i++){
+
+        #if MOMENTUM_NEUMANN_PRESSURE
+        Fu(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
+        Fv(i) += - JxW_face[qp]*value*face_normals[qp](1)*phi_face[i][qp];
+        Fw(i) += - JxW_face[qp]*value*face_normals[qp](2)*phi_face[i][qp];
+        #endif
+
+      } 
+    } //end qp
+  } //end if 
+  */
+
+
   }    
 }
 #endif //end NEUMANN_PRESSURE
@@ -207,8 +233,6 @@ for (unsigned int ns=0; ns<side->n_nodes(); ns++)
       	p(d)=value;
    	}
     
-test(4);
-
 //Apply Dirichlet Bcs properly
 #if CUBE 
   if ((elem->node(n) == side->node(ns))  )
@@ -271,13 +295,22 @@ if ((elem->node(n) == side->node(ns)) && ((p(2)<0.0001)  || (p(2)>1.4999))  )
 if ((elem->node(n) == side->node(ns)) && (p(0)<0.0001)  )
     {
        unsigned int source_dof = node->dof_number(fluid_system.number(), 0, 0);
-       Real value = progress*0.01;
+       Real value = progress*0.0;
        rows.push_back(source_dof);
        fluid_system.rhs->set(source_dof,value);
 
     }  //end if
-*/
-    
+
+
+if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
+    {
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 1, 0);
+       Real value = 0;
+       rows.push_back(source_dof);
+       fluid_system.rhs->set(source_dof,value);
+
+    }  //end if
+    */
     
 #endif 
 
@@ -296,6 +329,27 @@ if ((elem->node(n) == side->node(ns)) && (p(0)<0.0001)  )
     }  //end if
 #endif
 
+/*
+        if ((elem->node(n) == side->node(ns)) && (p(0)>1.4999 ) )
+    {
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 3, 0);
+       if (source_dof <12345678){ //The pressures do not exist everywhere// This is a hack !!
+       Real value = 1*time;
+       pressure_rows.push_back(source_dof);
+       fluid_system.rhs->set(source_dof,value);
+     }
+    }  //end if
+
+        if ((elem->node(n) == side->node(ns)) && (p(0)<0.01 ) )
+    {
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 3, 0);
+       if (source_dof <12345678){ //The pressures do not exist everywhere// This is a hack !!
+       Real value = 0;
+       pressure_rows.push_back(source_dof);
+       fluid_system.rhs->set(source_dof,value);
+     }
+    }  //end if
+*/
 #endif
 
 } //((elem->node(n) == side->node(ns))  )

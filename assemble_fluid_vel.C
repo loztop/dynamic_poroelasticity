@@ -180,6 +180,7 @@ Real fchapd=material.fchapd;
 Real M=material.M;
 #endif
 
+/*
 Number   div_vs = 0.;
   for (unsigned int d = 0; d < dim; ++d) {
       std::vector<Number> u_undefo;
@@ -188,7 +189,18 @@ Number   div_vs = 0.;
       for (unsigned int l = 0; l != n_u_dofs; l++)
         div_vs+=dphi[l][qp](d)*u_undefo[l]; 
     }
+    */
 
+  Number   div_vs = 0.;
+  for (unsigned int d = 0; d < dim; ++d) {
+      std::vector<Number> u_undefo_current;
+      std::vector<Number> u_undefo_old;
+      last_non_linear_soln.get_dof_map().dof_indices(elem, undefo_index,d);
+      last_non_linear_soln.current_local_solution->get(undefo_index, u_undefo_current);
+      last_non_linear_soln.old_local_solution->get(undefo_index, u_undefo_old);
+      for (unsigned int l = 0; l != n_u_dofs; l++)
+        div_vs+=(dphi[l][qp](d)*u_undefo_current[l]-dphi[l][qp](d)*u_undefo_old[l])/dt; 
+    }
 //Calculate the pressure from the previous time step at given qp.
 Number   p_old = 0.;
 for (unsigned int l=0; l<n_p_dofs; l++)
@@ -217,35 +229,37 @@ for (unsigned int l=0; l<n_p_dofs; l++)
 
           for (unsigned int j=0; j<n_p_dofs; j++){
 
+        // Weak form of grad p term
               Kup(i,j) += -JxW[qp]*psi[j][qp]*dphi[i][qp](0);
               Kvp(i,j) += -JxW[qp]*psi[j][qp]*dphi[i][qp](1);
               Kwp(i,j) += -JxW[qp]*psi[j][qp]*dphi[i][qp](2);
 
 
-           //Is this the velocity divergence term ?   
-              Kpu(j,i) += JxW[qp]*psi[j][qp]*dphi[i][qp](0);
-              Kpv(j,i) += JxW[qp]*psi[j][qp]*dphi[i][qp](1);
-              Kpw(j,i) += JxW[qp]*psi[j][qp]*dphi[i][qp](2);
+           //Is this the velocity divergence term ?   think so
+              Kpu(j,i) += dt*JxW[qp]*psi[j][qp]*dphi[i][qp](0);
+              Kpv(j,i) += dt*JxW[qp]*psi[j][qp]*dphi[i][qp](1);
+              Kpw(j,i) += dt*JxW[qp]*psi[j][qp]*dphi[i][qp](2);
             }
           }
 
 
 for (unsigned int i=0; i<n_p_dofs; i++){
-        Fp(i) += -div_vs*JxW[qp]*psi[i][qp];
+
+        Fp(i) += -dt*div_vs*JxW[qp]*psi[i][qp];
         //Backward euler contribution to rhs
-        Fp(i) +=  (1/(dt*J*M*fchap))*JxW[qp]*psi[i][qp]*p_old;
+        Fp(i) +=  (1/(J*M*fchap))*JxW[qp]*psi[i][qp]*p_old;
         //Mass matrix * 1/dt
 
   for (unsigned int j=0; j<n_p_dofs; j++){
     //Mass matrix * 1/dt
-    Kpp(i,j) += (1/(dt*J*M*fchap))*JxW[qp]*psi[i][qp]*(psi[j][qp]);
-    Kpp(i,j) += ((1*fchapd)/(dt*J*M*pow(fchap,2.0)))*div_vs*JxW[qp]*psi[i][qp]*(psi[j][qp]);
+    Kpp(i,j) += (1/(J*M*fchap))*JxW[qp]*psi[i][qp]*(psi[j][qp]);
+    Kpp(i,j) += dt*(((-1*fchapd)/(J*M*pow(fchap,2.0))) )*div_vs*JxW[qp]*psi[i][qp]*(psi[j][qp]);
     }    
   }
 
 Real q=0;
 Point point = elem->centroid();
-//if ( (point(0)<1.4 )   && (point(0)>0.5 )  &&  (point(1)<1.4 )  && (point(1)>0.1 ) &&   (point(2)<1.4 )   && (point(2)>0.1 )  ){
+
 if ( (point(0)>0.8)    ){
 q= 0.0;
 }

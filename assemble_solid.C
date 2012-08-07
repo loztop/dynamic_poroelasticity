@@ -373,6 +373,14 @@ for (unsigned int l=0; l<n_p_dofs; l++)
               p_fluid += psi[l][qp]*fluid_system_vel.current_local_solution->el(dof_indices_p[l]);
  }
 
+//As outlined in Chappel p=(p_curr-p_old)/2
+ Real p_fluid_old=0;
+for (unsigned int l=0; l<n_p_dofs; l++)
+ {
+              p_fluid_old += psi[l][qp]*fluid_system_vel.old_local_solution->el(dof_indices_p[l]);
+ }
+
+p_fluid=0.5*p_fluid+0.5*p_fluid_old;
 //std::cout<<"p_fluid "<<p_fluid<<std::endl;
 
 material.init_for_qp(grad_u_mat, p, qp, m, p_fluid);

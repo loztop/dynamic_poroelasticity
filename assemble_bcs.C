@@ -388,6 +388,35 @@ test(84);
      }  //end if 
 #endif
 
+
+/*
+    if ((elem->node(n) == side->node(ns)) && (p(0)<0.001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 0, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+
+     }  //end if
+ 
+    if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 1, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+     }  //end if
+
+
+   if ((elem->node(n) == side->node(ns)) && (p(2)<0.0001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 2, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+     }  //end if 
+*/
+
 #endif       
     } //end nodes in element lopp
 } // end nodes on side loop
