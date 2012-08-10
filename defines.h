@@ -86,7 +86,7 @@ using namespace std;
 
 #define STATIC 0
 #define DYNAMIC 1
-#define SOLID_VELOCITY 1
+#define SOLID_VELOCITY 0
 
 
 #define FIXED_MESH 0

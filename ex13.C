@@ -207,8 +207,8 @@ Real time     = 0;
 unsigned int n_timesteps = 1;
 
 #if DYNAMIC
-n_timesteps = 50;
-dt = 0.01;
+n_timesteps = 20;
+dt = 0.05;
 ExodusII_IO exo= ExodusII_IO(equation_systems.get_mesh());
 #if WRITE_TEC
 TecplotIO tec= TecplotIO(equation_systems.get_mesh());
@@ -442,18 +442,10 @@ test(3);
   velocity.current_local_solution->add(-1.0/dt_n_minus_1,*last_non_linear_soln.old_local_solution);
   velocity.current_local_solution->close();
   velocity.update();
-
-  std::cout<<"dt " <<  dt <<std::endl;
-
-
-  std::cout<<" last_non_linear_soln current " <<  (*last_non_linear_soln.current_local_solution)(123)<<std::endl;
-  std::cout<<" last_non_linear_soln old " <<  (*last_non_linear_soln.old_local_solution)(123)<<std::endl;
-
-  std::cout<<" velocity " <<  (*velocity.current_local_solution)(123)<<std::endl;
-
+//  std::cout<<" last_non_linear_soln old " <<  (*last_non_linear_soln.old_local_solution)(123)<<std::endl;
+//  std::cout<<" velocity " <<  (*velocity.current_local_solution)(123)<<std::endl;
   dt_n_minus_1=dt;
 #endif
-test(4);
 
 #if MOVING_MESH
 //Don't do mesh updating anymore
@@ -514,7 +506,6 @@ std::cout<<" pressure a " <<  (*pressure.current_local_solution)(u_dof_a)<<std::
 
 #if ASSEMBLE_PRESSURE_GRAD
 equation_systems.get_system("pressure-grad-system").solve();
-std::cout<<" pressure_grad 123 " <<  (*pressure_grad.current_local_solution)(123)<<std::endl;
 #endif
 
 
@@ -525,7 +516,7 @@ Real norm_delta = change_in_newton_update->l2_norm();
 
 Real norm_delta_fluid = 999.999;
 
- if ((norm_delta < 10.1) ){
+ if ((norm_delta < 0.1) ){
 
   std::cout<<" Solving fluid " <<  std::endl;
 
@@ -538,8 +529,11 @@ change_in_fluid->add(*fluid_system.solution);
 fluid.solution->zero();  
 fluid.update();
 
+#if !PETSC_MUMPS
+  equation_systems.parameters.set<unsigned int>("linear solver maximum iterations") = 2000;
+#endif
 #if PETSC_MUMPS
-petsc_linear_solver =dynamic_cast<PetscLinearSolver<Number>*>(system.get_linear_solver());
+ petsc_linear_solver =dynamic_cast<PetscLinearSolver<Number>*>(system.get_linear_solver());
    pc = petsc_linear_solver->pc();
    ierr = PCSetType(pc, PCLU);
   CHKERRABORT(libMesh::COMM_WORLD,ierr);
@@ -550,7 +544,6 @@ petsc_linear_solver =dynamic_cast<PetscLinearSolver<Number>*>(system.get_linear_
 clock_t begin_fluid_solve=clock();
 equation_systems.get_system("fluid-system").solve();
 clock_t end_fluid_solve=clock();
-
 
 equation_systems.reinit();
 #endif

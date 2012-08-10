@@ -28,10 +28,6 @@ void assemble_fluid_vel (EquationSystems& es,
 
     System& aux_system = es.get_system<System>("Reference-Configuration");
 
-     #if SOLID_VELOCITY
-TransientLinearImplicitSystem&  solid_velocity =
-        es.get_system<TransientLinearImplicitSystem>("velocity-system");
-#endif
 
     const unsigned int u_var = system.variable_number ("fluid_U_vel");
     const unsigned int v_var = system.variable_number ("fluid_V_vel");
@@ -179,17 +175,6 @@ Real fchap=material.fchap;
 Real fchapd=material.fchapd;
 Real M=material.M;
 #endif
-
-/*
-Number   div_vs = 0.;
-  for (unsigned int d = 0; d < dim; ++d) {
-      std::vector<Number> u_undefo;
-      solid_velocity.get_dof_map().dof_indices(elem, undefo_index,d);
-      solid_velocity.current_local_solution->get(undefo_index, u_undefo);
-      for (unsigned int l = 0; l != n_u_dofs; l++)
-        div_vs+=dphi[l][qp](d)*u_undefo[l]; 
-    }
-    */
 
   Number   div_vs = 0.;
   for (unsigned int d = 0; d < dim; ++d) {

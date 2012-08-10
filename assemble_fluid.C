@@ -94,8 +94,6 @@ AutoPtr<FEBase> fe_face (FEBase::build(3, fe_vel_type));
     const Real progress    = es.parameters.get<Real>("progress");
        unsigned int step    = es.parameters.get<unsigned int>("step");
            const Real non_lin_step    = es.parameters.get<Real>("non_lin_step");
-std::cout<<" non_lin_step " << non_lin_step<< std::endl;
-
 #endif
   
     MeshBase::const_element_iterator       el     = mesh.active_local_elements_begin();
