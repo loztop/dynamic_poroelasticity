@@ -204,7 +204,7 @@ for (unsigned int l=0; l<n_p_dofs; l++)
               Kww(i,j) += JxW[qp]*(phi[i][qp]*phi[j][qp]);
 
               // Laplacian for stokes flow /Brinkman
-              Real brink_mu=0.1;
+              Real brink_mu=1;
               Kuu(i,j) += brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
               Kvv(i,j) += brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
               Kww(i,j) += brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
@@ -220,23 +220,25 @@ for (unsigned int l=0; l<n_p_dofs; l++)
               Kwp(i,j) += -JxW[qp]*psi[j][qp]*dphi[i][qp](2);
 
 
-           //the velocity divergence term 
-              Kpu(j,i) += dt/dt*JxW[qp]*psi[j][qp]*dphi[i][qp](0);
-              Kpv(j,i) += dt/dt*JxW[qp]*psi[j][qp]*dphi[i][qp](1);
-              Kpw(j,i) += dt/dt*JxW[qp]*psi[j][qp]*dphi[i][qp](2);
+           //Is this the velocity divergence term ?   think so
+              Kpu(j,i) += JxW[qp]*psi[j][qp]*dphi[i][qp](0);
+              Kpv(j,i) += JxW[qp]*psi[j][qp]*dphi[i][qp](1);
+              Kpw(j,i) += JxW[qp]*psi[j][qp]*dphi[i][qp](2);
             }
           }
 
 
 for (unsigned int i=0; i<n_p_dofs; i++){
 
-        //Backward euler contribution to rhs
-        Fp(i) +=  (p_old/(J*M*fchap))*JxW[qp]*psi[i][qp];
         Fp(i) += -dt*div_vs*JxW[qp]*psi[i][qp];
+        //Backward euler contribution to rhs
+        Fp(i) +=  (1/(J*M*fchap))*JxW[qp]*psi[i][qp]*p_old;
+        //Mass matrix * 1/dt
 
   for (unsigned int j=0; j<n_p_dofs; j++){
+    //Mass matrix * 1/dt
     Kpp(i,j) += (1/(J*M*fchap))*JxW[qp]*psi[i][qp]*(psi[j][qp]);
-    Kpp(i,j) += -(fchapd/(M*pow(fchap,2.0)))*div_vs*JxW[qp]*psi[i][qp]*(psi[j][qp]);
+    Kpp(i,j) += dt*(((-1*fchapd)/(J*M*pow(fchap,2.0))) )*div_vs*JxW[qp]*psi[i][qp]*(psi[j][qp]);
     }    
   }
 

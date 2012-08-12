@@ -41,6 +41,7 @@
 //New header files
 //#include "solid_system.h"
 #include "functions.h"
+//#include "material_law.h"
 
 #include <time.h>
 
@@ -52,6 +53,8 @@ using namespace std;
 
 
 ///------------------------------//
+
+#define LOL1 0
 
 
 

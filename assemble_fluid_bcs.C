@@ -175,7 +175,7 @@ for (unsigned int ns=0; ns<side->n_nodes(); ns++)
    // value = progress*0.1  ;
 
      #if CHAP_SWELL
-      value = 5*(1-exp(-pow(time,2.0)/0.25)) ;
+      value = 0.1*(1-exp(-pow(time,2.0)/0.25)) ;
      #endif
 
       //value = 1;
@@ -283,25 +283,28 @@ if ((elem->node(n) == side->node(ns)) && ((p(2)<0.0001)  || (p(2)>1.4999))  )
        unsigned int source_dof = node->dof_number(fluid_system.number(), 0, 0);
     Real value = progress*0.1* ( (0.75*0.75-(p(1)-0.75)*(p(1)-0.75)) + (0.75*0.75-(p(2)-0.75)*(p(2)-0.75)) ) ;
      //   Real value =0 ;
-
-       rows.push_back(source_dof);
-       fluid_system.rhs->set(source_dof,value);
+    //   rows.push_back(source_dof);
+      // fluid_system.rhs->set(source_dof,value);
        
     }  //end if
    #endif 
    //DISK_FLOW
 
-/*
-if ((elem->node(n) == side->node(ns)) && (p(0)<0.0001)  )
+
+if ((elem->node(n) == side->node(ns)) && (p(0)<0.1)  )
     {
        unsigned int source_dof = node->dof_number(fluid_system.number(), 0, 0);
-       Real value = progress*0.0;
-       rows.push_back(source_dof);
-       fluid_system.rhs->set(source_dof,value);
+
+       //Real value = time*0.6;
+       //rows.push_back(source_dof);
+      // fluid_system.rhs->set(source_dof,value);
+
+             // std::cout<< "value "<<value<<std::endl;
+
 
     }  //end if
 
-
+/*
 if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
     {
        unsigned int source_dof = node->dof_number(fluid_system.number(), 1, 0);
@@ -310,7 +313,7 @@ if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
        fluid_system.rhs->set(source_dof,value);
 
     }  //end if
-    */
+  */
     
 #endif 
 
@@ -324,13 +327,13 @@ if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
        if (source_dof <12345678){ //The pressures do not exist everywhere// This is a hack !!
        Real value = 0;
        pressure_rows.push_back(source_dof);
-       fluid_system.rhs->set(source_dof,value);
+      fluid_system.rhs->set(source_dof,value);
      }
     }  //end if
 #endif
 
 /*
-        if ((elem->node(n) == side->node(ns)) && (p(0)>1.4999 ) )
+        if ((elem->node(n) == side->node(ns)) && (p(0)<0.01 ) )
     {
        unsigned int source_dof = node->dof_number(fluid_system.number(), 3, 0);
        if (source_dof <12345678){ //The pressures do not exist everywhere// This is a hack !!
@@ -339,17 +342,9 @@ if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
        fluid_system.rhs->set(source_dof,value);
      }
     }  //end if
-
-        if ((elem->node(n) == side->node(ns)) && (p(0)<0.01 ) )
-    {
-       unsigned int source_dof = node->dof_number(fluid_system.number(), 3, 0);
-       if (source_dof <12345678){ //The pressures do not exist everywhere// This is a hack !!
-       Real value = 0;
-       pressure_rows.push_back(source_dof);
-       fluid_system.rhs->set(source_dof,value);
-     }
-    }  //end if
 */
+
+
 #endif
 
 } //((elem->node(n) == side->node(ns))  )
@@ -392,7 +387,12 @@ fluid_system.rhs->close();
 test(6);
 
 fluid_system.matrix->close();
-//std::cout<<"AFTER BCS fluid_system.rhs->l2_norm () "<<fluid_system.rhs->l2_norm ()<<std::endl;
+//std::cout<<"AFTER BCS fluid_sefffffffffffffffsystem.rhs->l2_norm () "<<fluid_system.rhs->l2_norm ()<<std::endl;
+
+
+//fluid_system.rhs->print(std::cout);
+//fluid_system.matrix->print(std::cout);
+
 
   return;
 }

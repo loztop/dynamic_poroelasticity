@@ -27,6 +27,10 @@ void test(int a);
 
 void verify_jack(EquationSystems& es);
 
+void setup_es(EquationSystems& equation_systems);
+
+void read_options(unsigned int &  n_timesteps, std::string& result_file_name,const char* & plot_out_file_name, int& argc, char**& argv) ;
+
 
 Point get_expanding_sphere_bcs(EquationSystems& es, const Elem* elem, int n,double scale);
 Point constrain_tet_nodes(EquationSystems& es, const Elem* elem, int n);

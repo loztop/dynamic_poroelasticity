@@ -1,0 +1,6 @@
+make -j 2 all
+rm -f converge.txt
+mpirun -np 2 ./systems_of_equations_ex1-opt 2 poro2_ converge.txt
+mpirun -np 2 ./systems_of_equations_ex1-opt 4 poro4_ converge.txt
+mpirun -np 2 ./systems_of_equations_ex1-opt 8 poro8_ converge.txt
+gedit converge.txt

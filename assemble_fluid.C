@@ -300,7 +300,7 @@ for (unsigned int l = 0; l != n_u_dofs; l++){
                                                          
                     for (unsigned int i=0; i<phi_face.size(); i++){
 
-           Fu(i) += dt*JxW_face[qp]*J*phi_face[i][qp]*face_normals[qp]*grad_p_mat;
+           Fu(i) += 24*dt*JxW_face[qp]*J*phi_face[i][qp]*face_normals[qp]*grad_p_mat;
 
            Fv(i) += JxW_face[qp]*face_normals[qp](0)*phi_face[i][qp]*p_fluid;
 
