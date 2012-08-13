@@ -7,7 +7,8 @@ mpirun -np procs ./systems_of_equations_ex1-opt 1 poro1_ plotfile
 mpirun -np procs ./systems_of_equations_ex1-opt 2 poro2_ plotfile
 mpirun -np procs ./systems_of_equations_ex1-opt 4 poro4_ plotfile
 mpirun -np v ./systems_of_equations_ex1-opt 8 poro8_ plotfile
-mpirun -np procs ./systems_of_equations_ex1-opt 16 poro16_ plotfile
-mpirun -np procs ./systems_of_equations_ex1-opt 32 poro32_ plotfile
+#mpirun -np procs ./systems_of_equations_ex1-opt 16 poro16_ plotfile
+#mpirun -np procs ./systems_of_equations_ex1-opt 32 poro32_ plotfile
+#mpirun -np procs ./systems_of_equations_ex1-opt 45 poro45_ plotfile
 
 gedit plotfile

@@ -3,7 +3,7 @@
 #include "nonlinear_neohooke_cc.h"
 //#include "solid_system.h"
 #include "poro_elastic_cc.h"
-
+#include "mooney_cc.h"
 
 // The matrix assembly function to be called at each time step to
 // prepare for the linear solve.
@@ -144,7 +144,8 @@ std::vector<unsigned int> undefo_index;
       Fv.reposition (v_var*n_u_dofs, n_v_dofs);
       Fw.reposition (w_var*n_u_dofs, n_w_dofs);
       Fp.reposition (p_var*n_u_dofs, n_p_dofs);
-      
+   
+   #if PORO   
       // Now we will build the element matrix.
       for (unsigned int qp=0; qp<qrule.n_points(); qp++)
         {
@@ -169,7 +170,9 @@ for (unsigned int l=0; l<n_p_dofs; l++)
 
 Real p_solid=0;
 Real m_old=0;
+
 PoroelasticConfig material(dphi,phi);
+
 material.init_for_qp(grad_u_mat, p_solid, 0, m_old,p_fluid);
 Real J=material.J;
 #if CHAP
@@ -202,7 +205,7 @@ Real mchap=material.mchap;
              Fw(j) += JxW[qp]*phi[j][qp]*0;
 
         } // end of the quadrature point qp-loop
-
+#endif
         dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
   
         system.matrix->add_matrix (Ke, dof_indices);

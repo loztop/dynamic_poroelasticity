@@ -1,4 +1,4 @@
-#include "nonlinear_neohooke_cc.h"
+#include "neohooke_cc.h"
 #include "defines.h"
 #include <math.h>
 #include "poro_elastic_cc.h"
@@ -9,9 +9,6 @@
  * Return the inverse of the given TypeTensor. Algorithm taken from the tensor classes
  * of Ton van den Boogaard (http://tmku209.ctw.utwente.nl/~ton/tensor.html)
  */
-
-
-
 /*
  #if !PORO
 template <typename T> TypeTensor<T> inv(const TypeTensor<T> &A ) {
@@ -38,8 +35,7 @@ template <typename T> TypeTensor<T> inv(const TypeTensor<T> &A ) {
 }
 #endif
 */
-
-void NonlinearNeoHookeCurrentConfig::init_for_qp(VectorValue<Gradient> & grad_u, Number & p_current, unsigned int qp) {
+void NeoHookeCurrentConfig::init_for_qp(VectorValue<Gradient> & grad_u, Number & p_current, unsigned int qp) {
        this->current_qp = qp;
        
       #if INCOMPRESSIBLE 
@@ -88,7 +84,7 @@ void NonlinearNeoHookeCurrentConfig::init_for_qp(VectorValue<Gradient> & grad_u,
        this->calculate_stress();
 }
 
-void NonlinearNeoHookeCurrentConfig::init_for_qp(VectorValue<Gradient> & grad_u, Number & p_current, unsigned int qp, Real m) {
+void NeoHookeCurrentConfig::init_for_qp(VectorValue<Gradient> & grad_u, Number & p_current, unsigned int qp, Real m) {
        this->current_qp = qp;
         this->m = m;
 
@@ -140,7 +136,7 @@ void NonlinearNeoHookeCurrentConfig::init_for_qp(VectorValue<Gradient> & grad_u,
 
 }
 
-void NonlinearNeoHookeCurrentConfig::calculate_tangent() {
+void NeoHookeCurrentConfig::calculate_tangent() {
        Real mu = E / (2 * (1 + nu));
        Real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
        Real detF = F.det();
@@ -286,7 +282,7 @@ C_mat+=invCI_mat2;
 }
 
 
-void NonlinearNeoHookeCurrentConfig::calculate_stress() {
+void NeoHookeCurrentConfig::calculate_stress() {
 
        double mu = E / (2.0 * (1.0 + nu));
        double lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
@@ -325,7 +321,7 @@ S = 0.5 * lambda * (detF * detF - 1) * invC + mu * (identity - invC) + p_solid*d
        sigma = 1/detF * tau;
 }
 
-void NonlinearNeoHookeCurrentConfig::get_residual(DenseVector<Real> & residuum, unsigned int & i) {
+void NeoHookeCurrentConfig::get_residual(DenseVector<Real> & residuum, unsigned int & i) {
        B_L.resize(3, 6);
        DenseVector<Real> sigma_voigt(6);
        this->build_b_0_mat(i, B_L);
@@ -337,7 +333,7 @@ void NonlinearNeoHookeCurrentConfig::get_residual(DenseVector<Real> & residuum, 
        }
 
 #if INCOMPRESSIBLE
-void NonlinearNeoHookeCurrentConfig::get_p_residual(DenseVector<Real> & p_residuum, unsigned int & i) {
+void NeoHookeCurrentConfig::get_p_residual(DenseVector<Real> & p_residuum, unsigned int & i) {
        Real detF = F.det();
        p_residuum.resize(1);
          //     std::cout<<"neo  "<<std::cout;
@@ -347,7 +343,7 @@ void NonlinearNeoHookeCurrentConfig::get_p_residual(DenseVector<Real> & p_residu
 #endif   
 
 
-void NonlinearNeoHookeCurrentConfig::tensor_to_voigt(const RealTensor &tensor, DenseVector<Real> &vec) {
+void NeoHookeCurrentConfig::tensor_to_voigt(const RealTensor &tensor, DenseVector<Real> &vec) {
   vec(0) = tensor(0, 0);
   vec(1) = tensor(1, 1);
   vec(2) = tensor(2, 2);
@@ -357,7 +353,7 @@ void NonlinearNeoHookeCurrentConfig::tensor_to_voigt(const RealTensor &tensor, D
 
 }
 
-void NonlinearNeoHookeCurrentConfig::tensorOtensor_to_voigt(const RealTensor &tensorA, const RealTensor &tensorB, DenseMatrix<Real> &mat){
+void NeoHookeCurrentConfig::tensorOtensor_to_voigt(const RealTensor &tensorA, const RealTensor &tensorB, DenseMatrix<Real> &mat){
 //Top left
   /*
  for (unsigned int i = 0; i < 3; ++i) {
@@ -409,7 +405,7 @@ mat(i,5) = tensorA(a,b)*tensorB(1,2)+tensorA(a,b)*tensorB(2,1);
 }
 
 
-void NonlinearNeoHookeCurrentConfig::z_ref_to_voigt(const RealTensor &tensorA, const RealTensor &tensorB, DenseMatrix<Real> &mat){
+void NeoHookeCurrentConfig::z_ref_to_voigt(const RealTensor &tensorA, const RealTensor &tensorB, DenseMatrix<Real> &mat){
 //Top left
   /*
  for (unsigned int i = 0; i < 3; ++i) {
@@ -463,7 +459,7 @@ mat(i,5) = tensorA(a,1)*tensorB(b,2)+tensorA(a,2)*tensorB(1,b);
 
 
 
-void NonlinearNeoHookeCurrentConfig::get_linearized_stiffness(DenseMatrix<Real> & stiffness, unsigned int & i, unsigned int & j) {
+void NeoHookeCurrentConfig::get_linearized_stiffness(DenseMatrix<Real> & stiffness, unsigned int & i, unsigned int & j) {
        stiffness.resize(3, 3);
 
        double G_IK = (sigma * dphi[i][current_qp]) * dphi[j][current_qp];
@@ -484,7 +480,7 @@ void NonlinearNeoHookeCurrentConfig::get_linearized_stiffness(DenseMatrix<Real> 
 }
 
 #if INCOMPRESSIBLE
-void NonlinearNeoHookeCurrentConfig::get_linearized_uvw_p_stiffness(DenseVector<Real> & p_stiffness, unsigned int & i, unsigned int & j) {
+void NeoHookeCurrentConfig::get_linearized_uvw_p_stiffness(DenseVector<Real> & p_stiffness, unsigned int & i, unsigned int & j) {
   // Find and write down the mathematics for this section.
 // eulerian tangent matrix at 6.15 - Bonet
 RealTensor Ft = F.transpose();
@@ -524,7 +520,7 @@ p_stiffness(2)=psi[j][current_qp]*dphi[i][current_qp](2);
 
 }
 
-void NonlinearNeoHookeCurrentConfig::get_linearized_p_uvw_stiffness(DenseVector<Real> & p_stiffness, unsigned int & i, unsigned int & j) {
+void NeoHookeCurrentConfig::get_linearized_p_uvw_stiffness(DenseVector<Real> & p_stiffness, unsigned int & i, unsigned int & j) {
 //Build K_C (differentiate p eqn in u direction).
 RealTensor Ft = F.transpose();
 Real detF = F.det();
@@ -556,7 +552,7 @@ p_stiffness(2)=psi[i][current_qp]*dphi[j][current_qp](2);
 
 #endif
 
-void NonlinearNeoHookeCurrentConfig::build_b_0_mat(int i, DenseMatrix<Real>& b_0_mat) {
+void NeoHookeCurrentConfig::build_b_0_mat(int i, DenseMatrix<Real>& b_0_mat) {
        for (unsigned int ii = 0; ii < 3; ++ii) {
                b_0_mat(ii, ii) = dphi[i][current_qp](ii);
        }
@@ -570,7 +566,7 @@ void NonlinearNeoHookeCurrentConfig::build_b_0_mat(int i, DenseMatrix<Real>& b_0
 }
 
 /*
-void NonlinearNeoHookeCurrentConfig::c_update(RealTensor C) {
+void NeoHookeCurrentConfig::c_update(RealTensor C) {
      
     // Real m=0;
 

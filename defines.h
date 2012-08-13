@@ -49,23 +49,20 @@
 using namespace libMesh;
 using namespace std;
 
-#define HERM 0
-
-
 ///------------------------------//
-
-#define LOL1 0
-
 
 
 #define PORO 1
 
-#define VERIFY_TEST_FINAL 0
 #define CHAP 1
+#define NEO 0
+#define MOONEY 0
+
+
 #define COMPRESSIBLE 0
 #define INCOMPRESSIBLE 1
-#define INCOMPRESSIBLE_STRESS 0 //I think the linearization is not quite correct especially the fourth order tensor.
 #define INCOMPRESSIBLE_CHEAT 0
+
 
 #define SOLVE_SOLID 1
 
@@ -74,7 +71,7 @@ using namespace std;
 
 #define ASSEMBLE_PRESSURE 0
 #define ASSEMBLE_PRESSURE_GRAD 0
-#define ASSEMBLE_RESULTS 1
+#define ASSEMBLE_RESULTS 0
 
 
 #define LOG_PERFORMANCE 0
@@ -131,6 +128,31 @@ using namespace std;
 #define DIRICHLET_VELOCITY	1
 #define DISK_FLOW	0	
 #define SEALED_CUBE	0	
+
+
+
+template <typename T> TypeTensor<T> inv(const TypeTensor<T> &A ) {
+  double Sub11, Sub12, Sub13;
+  Sub11 = A._coords[4]*A._coords[8] - A._coords[5]*A._coords[7];
+  Sub12 = A._coords[3]*A._coords[8] - A._coords[6]*A._coords[5];
+  Sub13 = A._coords[3]*A._coords[7] - A._coords[6]*A._coords[4];
+  double detA = A._coords[0]*Sub11 - A._coords[1]*Sub12 + A._coords[2]*Sub13;
+  libmesh_assert( std::fabs(detA)>1.e-15 );
+
+  TypeTensor<T> Ainv(A);
+
+  Ainv._coords[0] =  Sub11/detA;
+  Ainv._coords[1] = (-A._coords[1]*A._coords[8]+A._coords[2]*A._coords[7])/detA;
+  Ainv._coords[2] = ( A._coords[1]*A._coords[5]-A._coords[2]*A._coords[4])/detA;
+  Ainv._coords[3] = -Sub12/detA;
+  Ainv._coords[4] = ( A._coords[0]*A._coords[8]-A._coords[2]*A._coords[6])/detA;
+  Ainv._coords[5] = (-A._coords[0]*A._coords[5]+A._coords[2]*A._coords[3])/detA;
+  Ainv._coords[6] =  Sub13/detA;
+  Ainv._coords[7] = (-A._coords[0]*A._coords[7]+A._coords[1]*A._coords[6])/detA;
+  Ainv._coords[8] = ( A._coords[0]*A._coords[4]-A._coords[1]*A._coords[3])/detA;
+
+  return Ainv;
+}
 
 
 #endif /* DEFINES_H_ */

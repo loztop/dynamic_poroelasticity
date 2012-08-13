@@ -53,6 +53,7 @@ using namespace std;
 #define ORDER_HIGH SECOND
 #define ORDER_LOW FIRST 
 
+
 // Function prototype.  This function will assemble the system
 // matrix and right-hand-side.
 void assemble_solid (EquationSystems& es,

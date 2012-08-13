@@ -1,7 +1,8 @@
 #include "defines.h"
 #include "assemble.h"
-#include "nonlinear_neohooke_cc.h"
+#include "neohooke_cc.h"
 #include "poro_elastic_cc.h"
+#include "mooney_cc.h"
 
 //#include "solid_system.h"
 
@@ -192,20 +193,28 @@ test(66);
   PoroelasticConfig material(dphi,psi);
 #endif
 
-#if INCOMPRESSIBLE && ! PORO
+
+#if COMPRESSIBLE && NEO
+    NeoHookeCurrentConfig material(dphi);    
+#endif
+
+#if INCOMPRESSIBLE && NEO
   DenseVector<Real> p_stiff;
   DenseVector<Real> p_res;
-    NonlinearNeoHookeCurrentConfig material(dphi,psi);
+  NeoHookeCurrentConfig material(dphi,psi);
+#endif
+
+#if COMPRESSIBLE && MOONEY
+  MooneyCurrentConfig material(dphi);
 #endif
     
-#if COMPRESSIBLE 
-    NonlinearNeoHookeCurrentConfig material(dphi);    
+#if INCOMPRESSIBLE && MOONEY
+  DenseVector<Real> p_stiff;
+  DenseVector<Real> p_res;
+  MooneyCurrentConfig material(dphi,psi);
 #endif
 
-
-
-
-      // Just calculate jacobian contribution when we need to
+  // Just calculate jacobian contribution when we need to
   material.calculate_linearized_stiffness = true;
   MeshBase::const_element_iterator       el     = mesh.active_local_elements_begin();
   const MeshBase::const_element_iterator end_el = mesh.active_local_elements_end(); 
@@ -399,7 +408,7 @@ material.init_for_qp(grad_u_mat, p, qp);
 
 #if COMPRESSIBLE 
 Number p_comp=0;
-material.init_for_qp(grad_u_mat,p_comp, qp);
+material.init_for_qp(grad_u_mat,p_comp,qp);
 #endif
           for (unsigned int i=0; i<n_u_dofs; i++)
             {
@@ -463,11 +472,9 @@ material.init_for_qp(grad_u_mat,p_comp, qp);
  
 
 #if UN_MINUS_ONE
-    std::vector<Number> unm1_x;
-    unm1.old_local_solution->get(undefo_index, unm1_x);
-value_acc[d] = fac*JxW[qp]*phi[i][qp]*( (current_x[i]-X[i])-(old_x[i]-X[i])-1*((old_x[i]-X[i])-(unm1_x[i]-X[i])) );   //Might want to also change the jaconiamn for this since we have an extra current_x (so multiply M by 0.5, I think). 
-
-//std::cout<< "unm1_x[i]_x "<< unm1_x[i] <<std::endl;
+  std::vector<Number> unm1_x;
+  unm1.old_local_solution->get(undefo_index, unm1_x);
+  value_acc[d] = fac*JxW[qp]*phi[i][qp]*( (current_x[i]-X[i])-(old_x[i]-X[i])-1*((old_x[i]-X[i])-(unm1_x[i]-X[i])) );   //Might want to also change the jaconiamn for this since we have an extra current_x (so multiply M by 0.5, I think). 
 #endif
 
 }

@@ -9,43 +9,27 @@
 
 
 #include "defines.h"
-#include "nonlinear_neohooke_cc.h"
+#include "general_material_cc.h"
 
 
 
-#if PORO
+//#if PORO
 /**
  * Return the inverse of the given TypeTensor. Algorithm taken from the tensor classes
  * of Ton van den Boogaard (http://tmku209.ctw.utwente.nl/~ton/tensor.html)
  */
-template <typename T> TypeTensor<T> inv(const TypeTensor<T> &A ) {
-  double Sub11, Sub12, Sub13;
-  Sub11 = A._coords[4]*A._coords[8] - A._coords[5]*A._coords[7];
-  Sub12 = A._coords[3]*A._coords[8] - A._coords[6]*A._coords[5];
-  Sub13 = A._coords[3]*A._coords[7] - A._coords[6]*A._coords[4];
-  double detA = A._coords[0]*Sub11 - A._coords[1]*Sub12 + A._coords[2]*Sub13;
-  libmesh_assert( std::fabs(detA)>1.e-15 );
 
-  TypeTensor<T> Ainv(A);
 
-  Ainv._coords[0] =  Sub11/detA;
-  Ainv._coords[1] = (-A._coords[1]*A._coords[8]+A._coords[2]*A._coords[7])/detA;
-  Ainv._coords[2] = ( A._coords[1]*A._coords[5]-A._coords[2]*A._coords[4])/detA;
-  Ainv._coords[3] = -Sub12/detA;
-  Ainv._coords[4] = ( A._coords[0]*A._coords[8]-A._coords[2]*A._coords[6])/detA;
-  Ainv._coords[5] = (-A._coords[0]*A._coords[5]+A._coords[2]*A._coords[3])/detA;
-  Ainv._coords[6] =  Sub13/detA;
-  Ainv._coords[7] = (-A._coords[0]*A._coords[7]+A._coords[1]*A._coords[6])/detA;
-  Ainv._coords[8] = ( A._coords[0]*A._coords[4]-A._coords[1]*A._coords[3])/detA;
-
-  return Ainv;
-}
-
-class PoroelasticConfig : public NonlinearNeoHookeCurrentConfig {
+class PoroelasticConfig : public GeneralMaterialConfig {
 
 public:
 #if INCOMPRESSIBLE || (CHAP) 
-PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi) :  NonlinearNeoHookeCurrentConfig(dphi, psi){
+PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi) :  GeneralMaterialConfig(dphi, psi){
+
+     E = 1;
+    nu = 0.3;
+  K1=10000;
+  K2=10;
 f_phase_ref=0.6;
 f_density=1;
 A=1.0; 
@@ -62,18 +46,33 @@ mchap=0;
 #endif
 }
 
-PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi, Real p_fluid) : p_fluid(p_fluid),  NonlinearNeoHookeCurrentConfig(dphi, psi){
-f_phase_ref=0.6;
-f_density=1;
+PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi, Real p_fluid) : p_fluid(p_fluid),  GeneralMaterialConfig(dphi, psi){
+
+//Stuff I don't really need.
+     E = 1;
+    nu = 0.3;
 A=1.0; 
 D=1.0; 
 Q=1.0; 
+///
+
+
+
+f_phase_ref=0.1;
+f_density=1;
+
 #if CHAP
-k1=1.0;
-k2=1.0;
-K=1.0;
+K1=2000;
+K2=33;
+//nu = 68
+K=1.0;  
 M=1.0;
-p_fluid_zero=0;
+//bzero=1 always, this is hardcoded into the code. 
+//kzero =0.01 
+rho_solid_zero=1000;
+rho_fluid_zero=1000;
+p_fluid_zero=0;//Doesn't even feature in code at the moment
+
 mchap=0;
 
 #endif
@@ -84,6 +83,14 @@ mchap=0;
   Real p_fluid;
   Real f_density;
 
+
+  Real rho_solid_zero, rho_fluid_zero;
+
+
+Real m;
+
+Real K1 ;
+Real K2 ;
   //Mooney Rivlin Law constants - need to make a seperate Mooney Rivlin law
   // ot just pretend k_1 = 0 , and use the current neo hooken (currentley implemented).
   //Real k_1;
@@ -93,6 +100,14 @@ mchap=0;
   Real f_phase_ref;
   Real f_phase;
   
+
+//Neo hookean stuff
+  Real E;
+  Real nu;
+
+  //Old KCL stuff
+  Real f ;
+Real gamma; 
 
 #if CHAP
 Real k1 ;
@@ -133,4 +148,4 @@ Real Q;
 
 #endif /* NONLINEAR_NEOHOOKE_CC_H_ */
 
-#endif
+//#endif

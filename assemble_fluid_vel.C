@@ -236,7 +236,7 @@ for (unsigned int i=0; i<n_p_dofs; i++){
 
   for (unsigned int j=0; j<n_p_dofs; j++){
     Kpp(i,j) += (1/(J*M*fchap))*JxW[qp]*psi[i][qp]*(psi[j][qp]);
-    Kpp(i,j) += -(fchapd/(M*pow(fchap,2.0)))*div_vs*JxW[qp]*psi[i][qp]*(psi[j][qp]);
+    Kpp(i,j) += -dt*(fchapd/(M*pow(fchap,2.0)))*div_vs*JxW[qp]*psi[i][qp]*(psi[j][qp]);
     }    
   }
 

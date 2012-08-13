@@ -316,7 +316,8 @@ test(84);
 
 
 #if CUBE 
-/*
+
+   #if ! CHAP_SWELL
   if ((elem->node(n) == side->node(ns)) && (p(0)<0.001 )  )
   {
 	for (unsigned int d = 0; d < 3; ++d) {
@@ -326,8 +327,8 @@ test(84);
 	newton_update.rhs->set(source_dof,value);
    	}  //end dimension loop
     }  //end if
-    
-  */
+    #endif
+  
 
 #if MOVING_DIRICHLET_BCS
 
@@ -347,7 +348,7 @@ test(84);
 #if DYNAMIC
   //  if (progress<0.1){
       	unsigned int source_dof = node->dof_number(1, 0, 0);
-	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof) + sin(progress*PI)*0.1; //sin(progress*PI)*0.1;
+	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof) + sin(progress*PI)*0.2; //sin(progress*PI)*0.1;
         rows.push_back(source_dof);
 	newton_update.rhs->set(source_dof,value);
 //}

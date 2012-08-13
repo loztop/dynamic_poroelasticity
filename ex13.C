@@ -34,7 +34,7 @@ MeshData mesh_data(mesh);
 
 #if CUBE
  MeshTools::Generation::build_cube (mesh,
-                                       2, 2, 2,
+                                       3, 3, 3,
                                        0., 1.5,	
                                        0., 1.5,
 				                               0., 1.5,
@@ -92,8 +92,12 @@ equation_systems.init ();
 TransientLinearImplicitSystem&  newton_update =   equation_systems.get_system<TransientLinearImplicitSystem>("Newton-update");
 TransientLinearImplicitSystem&  last_non_linear_soln = equation_systems.get_system<TransientLinearImplicitSystem>("Last-non-linear-soln");
 TransientLinearImplicitSystem&  reference =   equation_systems.get_system<TransientLinearImplicitSystem>("Reference-Configuration");
+#if FLUID_VEL
 TransientLinearImplicitSystem&  fluid_system_vel = equation_systems.get_system<TransientLinearImplicitSystem>("fluid-system-vel");
+#endif
+#if ASSEMBLE_RESULTS
 TransientLinearImplicitSystem&  results_system =    equation_systems.get_system<TransientLinearImplicitSystem>("pressure-system-lol");
+#endif
 
 #if PETSC_MUMPS
   PetscLinearSolver<Number>* petsc_linear_solver =dynamic_cast<PetscLinearSolver<Number>*>(newton_update.get_linear_solver());

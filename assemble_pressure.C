@@ -4,7 +4,7 @@
 //#include "solid_system.h"
 #include "poro_elastic_cc.h"
 
-
+#if ASSEMBLE_PRESSURE
 // The matrix assembly function to be called at each time step to
 // prepare for the linear solve.
 void assemble_pressure (EquationSystems& es,
@@ -276,6 +276,7 @@ if( (step ==70) && (non_lin_step <1)  ) {
     return;    
   }
 
+#endif
 
 
 
