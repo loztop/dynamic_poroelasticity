@@ -42,17 +42,17 @@ MeshData mesh_data(mesh);
 #endif
 mesh.all_second_order();
 mesh.prepare_for_use();
-//mesh.print_info();
+mesh.print_info();
 EquationSystems equation_systems (mesh);  
 setup_es(equation_systems);
 Real time     = 0;
-Real end_time     = 1;
+Real end_time     = 2;
 
 
-const unsigned int n_nonlinear_steps = 25;
+const unsigned int n_nonlinear_steps = 15;
 const Real nonlinear_tolerance       = 1.e-1;
 const Real initial_linear_solver_tol = 1.e-8;
-unsigned int n_timesteps = 8;
+unsigned int n_timesteps = 10;
 Real dt = end_time/n_timesteps;
 
 
@@ -64,7 +64,7 @@ TecplotIO tec= TecplotIO(equation_systems.get_mesh());
 Real dt_n_minus_1 = dt;
 
 const char* plot_out_file_name ="plot.txt";
-std::string result_file_name ("poro");
+std::string result_file_name ("poro10_");
 
 if (argc >2){
 read_options(n_timesteps,result_file_name,plot_out_file_name,argc, argv);
@@ -323,7 +323,7 @@ Real norm_delta = change_in_newton_update->l2_norm();
 
 Real norm_delta_fluid = 999.999;
 
- if ((norm_delta < 0.1) ){
+ if ((norm_delta < 1230.1) ){
 
   std::cout<<" Solving fluid " <<  std::endl;
 

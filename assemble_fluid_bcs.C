@@ -176,6 +176,8 @@ for (unsigned int ns=0; ns<side->n_nodes(); ns++)
 
      #if CHAP_SWELL
       value = 0.1*(1-exp(-pow(time,2.0)/0.25)) ;
+      value = 1000*progress ;
+
      #endif
 
       //value = 1;

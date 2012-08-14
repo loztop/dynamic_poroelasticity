@@ -174,6 +174,7 @@ Real J=material.J;
 Real fchap=material.fchap;
 Real fchapd=material.fchapd;
 Real M=material.M;
+Real Kperm=material.Kperm;
 #endif
 
   Number   div_vs = 0.;
@@ -199,9 +200,9 @@ for (unsigned int l=0; l<n_p_dofs; l++)
 
             for (unsigned int j=0; j<n_u_dofs; j++){
               //w.v term (u)
-              Kuu(i,j) += JxW[qp]*(phi[i][qp]*phi[j][qp]);
-              Kvv(i,j) += JxW[qp]*(phi[i][qp]*phi[j][qp]);
-              Kww(i,j) += JxW[qp]*(phi[i][qp]*phi[j][qp]);
+              Kuu(i,j) += (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
+              Kvv(i,j) += (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
+              Kww(i,j) += (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
 
               // Laplacian for stokes flow /Brinkman
               Real brink_mu=0.1;

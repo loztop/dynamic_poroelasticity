@@ -185,6 +185,30 @@ void PoroelasticConfig::init_for_qp(VectorValue<Gradient> & grad_u, Number & p_c
     this->Ft = F.transpose();
       this->C = Ft*F;
 
+
+
+//Set parameters
+
+K1=2000;
+K2=33;
+K=2.2 *100000;  
+M=2.18*100000;
+Kperm=0.0000001;
+
+
+K1=1;
+K2=1;
+K=1;  
+M=1;
+Kperm=1;
+
+K1=2000;
+K2=33;
+K=2.2 *100000;  
+M=2.18*1000;
+Kperm=0.0000001;
+
+
       this->c_update(C);
 
        if (this->calculate_linearized_stiffness) {

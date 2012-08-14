@@ -6,6 +6,7 @@
 #include <vector_value.h>
 #include <tensor_value.h>
 #include <getpot.h>
+#include <math.h>
 
 
 #include "defines.h"
@@ -26,37 +27,45 @@ public:
 #if INCOMPRESSIBLE || (CHAP) 
 PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi) :  GeneralMaterialConfig(dphi, psi){
 
-     E = 1;
-    nu = 0.3;
-  K1=10000;
-  K2=10;
-f_phase_ref=0.6;
-f_density=1;
-A=1.0; 
-D=1.0; 
-Q=1.0; 
-#if CHAP
-k1=1.0;
-k2=1.0;
-K=1.0;
-M=1.0;
-p_fluid_zero=0;
-mchap=0;
-
-#endif
-}
-
-PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi, Real p_fluid) : p_fluid(p_fluid),  GeneralMaterialConfig(dphi, psi){
-
 //Stuff I don't really need.
-     E = 1;
-    nu = 0.3;
+E = 1;
+nu = 0.3;
 A=1.0; 
 D=1.0; 
 Q=1.0; 
 ///
 
+f_phase_ref=0.1;
+f_density=1;
 
+#if CHAP
+K1=2000;
+K2=33;
+//nu = 68
+K=2.2 *100000;  
+//K=1;
+//M=10000;
+M=2.18*100;
+//bzero=1 always, this is hardcoded into the code. 
+//kzero =0.01 
+rho_solid_zero=1000; //currently only looking at quasi static solid
+rho_fluid_zero=1000;
+p_fluid_zero=0;      //Doesn't even feature in code at the moment
+Kperm=0.0000001;
+mchap=0;
+#endif
+}
+
+PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi, Real p_fluid) : p_fluid(p_fluid),  GeneralMaterialConfig(dphi, psi){
+
+//This constructor is not used
+//Stuff I don't really need.
+E = 1;
+nu = 0.3;
+A=1.0; 
+D=1.0; 
+Q=1.0; 
+///
 
 f_phase_ref=0.1;
 f_density=1;
@@ -71,10 +80,9 @@ M=1.0;
 //kzero =0.01 
 rho_solid_zero=1000;
 rho_fluid_zero=1000;
-p_fluid_zero=0;//Doesn't even feature in code at the moment
-
+p_fluid_zero=0;      //Doesn't even feature in code at the moment
+Kperm=10.00000001;
 mchap=0;
-
 #endif
 
 }
@@ -82,6 +90,7 @@ mchap=0;
 
   Real p_fluid;
   Real f_density;
+  Real Kperm;
 
 
   Real rho_solid_zero, rho_fluid_zero;
