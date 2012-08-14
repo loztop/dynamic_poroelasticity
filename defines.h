@@ -68,9 +68,12 @@ using namespace std;
 #define FLUID 0
 #define FLUID_VEL 1
 
+#define DECOUPLE 0
+
+
 #define ASSEMBLE_PRESSURE 0
 #define ASSEMBLE_PRESSURE_GRAD 0
-#define ASSEMBLE_RESULTS 0
+#define ASSEMBLE_RESULTS 1
 
 
 #define LOG_PERFORMANCE 0

@@ -34,7 +34,7 @@ MeshData mesh_data(mesh);
 
 #if CUBE
  MeshTools::Generation::build_cube (mesh,
-                                       3, 3, 3,
+                                       2,2, 2,
                                        0., 1.5,	
                                        0., 1.5,
 				                               0., 1.5,
@@ -46,7 +46,7 @@ mesh.print_info();
 EquationSystems equation_systems (mesh);  
 setup_es(equation_systems);
 Real time     = 0;
-Real end_time     = 2;
+Real end_time     = 1.5;
 
 
 const unsigned int n_nonlinear_steps = 15;
@@ -64,7 +64,7 @@ TecplotIO tec= TecplotIO(equation_systems.get_mesh());
 Real dt_n_minus_1 = dt;
 
 const char* plot_out_file_name ="plot.txt";
-std::string result_file_name ("poro10_");
+std::string result_file_name ("poro");
 
 if (argc >2){
 read_options(n_timesteps,result_file_name,plot_out_file_name,argc, argv);
@@ -75,7 +75,7 @@ dt = end_time/n_timesteps;
 #if CHAP
 ofstream outFile;         // Step #2 - Declare outstream file.
 outFile.open(plot_out_file_name, std::ios_base::app);        // Step #3 - Open outFile.
-outFile <<"\n" << result_file_name  << " " << n_timesteps << "\n";
+//outFile <<"\n" << result_file_name  << " " << n_timesteps << "\n";
 
 #endif
 
@@ -472,19 +472,15 @@ Point p1(0,0,0);
 Point p2(0.75,0.75,0.75);
 Point p3(1.5,1.5,1.5);
 
-outFile << " time: "<< time << "\n";
+//outFile << " time: "<< time << "\n";
 
-outFile << fluid_system_vel.point_value(2,p1) << " ";
-//outFile<<fluid_system_vel.point_value(2,p2)<< " ";
-outFile<<fluid_system_vel.point_value(2,p3)<< " ";
+outFile << results_system.point_value(0,p1) << " ";
+outFile<<results_system.point_value(0,p2)<< " ";
+outFile<<results_system.point_value(0,p3)<< " ";
 
-outFile << results_system.point_value(1,p1) << " ";
-//outFile<<results_system.point_value(1,p2)<< " ";
-outFile<<results_system.point_value(1,p3)<< " ";
-
-//outFile << results_system.point_value(2,p1) << " ";
-//outFile<<results_system.point_value(2,p2)<< " ";
-//outFile<<results_system.point_value(2,p3)<< " ";
+outFile << fluid_system_vel.point_value(3,p1) << " ";
+outFile<<fluid_system_vel.point_value(3,p2)<< " ";
+outFile<<fluid_system_vel.point_value(3,p3)<< " ";
 
 outFile<< endl;   
 #endif

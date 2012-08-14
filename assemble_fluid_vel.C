@@ -187,28 +187,37 @@ Real Kperm=material.Kperm;
       for (unsigned int l = 0; l != n_u_dofs; l++)
         div_vs+=(dphi[l][qp](d)*u_undefo_current[l]-dphi[l][qp](d)*u_undefo_old[l])/dt; 
     }
+
+
+
+
 //Calculate the pressure from the previous time step at given qp.
 Number   p_old = 0.;
 for (unsigned int l=0; l<n_p_dofs; l++)
 {
               p_old += psi[l][qp]*system.old_local_solution->el(dof_indices_p[l]);
 }
-
+#if DECOUPLE
+div_vs=0.1;
+p_old=0.1;
+#endif
+Real factor=1;
              // Assemble the u-velocity row
             //Mass Matrix needed for darcy flow
           for (unsigned int i=0; i<n_u_dofs; i++){
 
             for (unsigned int j=0; j<n_u_dofs; j++){
               //w.v term (u)
-              Kuu(i,j) += (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
-              Kvv(i,j) += (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
-              Kww(i,j) += (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
+
+              Kuu(i,j) +=  (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
+              Kvv(i,j) +=  (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
+              Kww(i,j) +=  (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
 
               // Laplacian for stokes flow /Brinkman
-              Real brink_mu=0.1;
-              Kuu(i,j) += brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
-              Kvv(i,j) += brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
-              Kww(i,j) += brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
+              Real brink_mu=0.001;
+              Kuu(i,j) += factor*brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
+              Kvv(i,j) += factor*brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
+              Kww(i,j) += factor*brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
 
             }
 
@@ -216,9 +225,9 @@ for (unsigned int l=0; l<n_p_dofs; l++)
           for (unsigned int j=0; j<n_p_dofs; j++){
 
         // Weak form of grad p term
-              Kup(i,j) += -JxW[qp]*psi[j][qp]*dphi[i][qp](0);
-              Kvp(i,j) += -JxW[qp]*psi[j][qp]*dphi[i][qp](1);
-              Kwp(i,j) += -JxW[qp]*psi[j][qp]*dphi[i][qp](2);
+              Kup(i,j) += -factor*JxW[qp]*psi[j][qp]*dphi[i][qp](0);
+              Kvp(i,j) += -factor*JxW[qp]*psi[j][qp]*dphi[i][qp](1);
+              Kwp(i,j) += -factor*JxW[qp]*psi[j][qp]*dphi[i][qp](2);
 
 
            //the velocity divergence term 
