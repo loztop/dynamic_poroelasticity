@@ -55,10 +55,7 @@ using namespace std;
 
 #define CHAP 1
 #define NEO 0
-<<<<<<< HEAD
 #define ANALNEO 0
-=======
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #define MOONEY 0
 
 
@@ -72,14 +69,11 @@ using namespace std;
 #define FLUID 0
 #define FLUID_VEL 1
 
-<<<<<<< HEAD
 #define FLUID_P_CONST 0
 
 #define SOLID_P_CONST 1
 #define KCL 0
 
-=======
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #define DECOUPLE 0
 
 
@@ -126,7 +120,6 @@ using namespace std;
 //Boundary conditions
 #define TRACTION_BC 0
 #define DIRICHLET_CLASSIC 1
-<<<<<<< HEAD
 #define MOVING_DIRICHLET_BCS 1
 
 #define CHAP_SWELL 0
@@ -142,26 +135,6 @@ using namespace std;
 #define DIRICHLET_VELOCITY	1
 #define DISK_FLOW	0
 #define SEALED_CUBE	1
-=======
-#define PENALTY 0
-#define MOVING_DIRICHLET_BCS 0
-
-#define CHAP_SWELL 1
-
-
-//Fluid BCs
-#define NEUMANN_PRESSURE	1
-//Different Neumann pressure bcs
-#define MOMENTUM_NEUMANN_PRESSURE 1
-#define MASS_NEUMANN_PRESSURE 0
-
-#define DIRICHLET_PRESSURE	1
-#define DIRICHLET_VELOCITY	1
-#define DISK_FLOW	0	
-#define SEALED_CUBE	0	
-
-
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 template <typename T> TypeTensor<T> inv(const TypeTensor<T> &A ) {
   double Sub11, Sub12, Sub13;

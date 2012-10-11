@@ -4,7 +4,6 @@
 #include "poro_elastic_cc.h"
 
 
-
 void AnalNeo::init_for_qp(VectorValue<Gradient> & grad_u, Number & p_current, unsigned int qp) {
        this->current_qp = qp;
        

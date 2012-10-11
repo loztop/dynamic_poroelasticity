@@ -24,19 +24,11 @@
 class PoroelasticConfig : public GeneralMaterialConfig {
 
 public:
-<<<<<<< HEAD
 
 PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi) :  GeneralMaterialConfig(dphi, psi){
 
 //Stuff I don't really need.
 E = 8000.0;
-=======
-#if INCOMPRESSIBLE || (CHAP) 
-PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi) :  GeneralMaterialConfig(dphi, psi){
-
-//Stuff I don't really need.
-E = 1;
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 nu = 0.3;
 A=1.0; 
 D=1.0; 
@@ -59,52 +51,14 @@ M=2.18*100;
 rho_solid_zero=1000; //currently only looking at quasi static solid
 rho_fluid_zero=1000;
 p_fluid_zero=0;      //Doesn't even feature in code at the moment
-<<<<<<< HEAD
 Kperm=0.1;
-=======
-Kperm=0.0000001;
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 mchap=0;
 #endif
 }
 
-<<<<<<< HEAD
 
 
 
-=======
-PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi, Real p_fluid) : p_fluid(p_fluid),  GeneralMaterialConfig(dphi, psi){
-
-//This constructor is not used
-//Stuff I don't really need.
-E = 1;
-nu = 0.3;
-A=1.0; 
-D=1.0; 
-Q=1.0; 
-///
-
-f_phase_ref=0.1;
-f_density=1;
-
-#if CHAP
-K1=2000;
-K2=33;
-//nu = 68
-K=1.0;  
-M=1.0;
-//bzero=1 always, this is hardcoded into the code. 
-//kzero =0.01 
-rho_solid_zero=1000;
-rho_fluid_zero=1000;
-p_fluid_zero=0;      //Doesn't even feature in code at the moment
-Kperm=10.00000001;
-mchap=0;
-#endif
-
-}
-#endif
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
   Real p_fluid;
   Real f_density;
@@ -165,12 +119,9 @@ Real calc_mchap();
   void calculate_tangent();
 
 
-<<<<<<< HEAD
   void get_linearized_p_uvw_stiffness(DenseVector<Real> & p_stiffness, unsigned int & i, unsigned int & j);
   void get_linearized_uvw_p_stiffness(DenseVector<Real> & p_stiffness, unsigned int & i, unsigned int & j);
 
-=======
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 Real A; 
 Real D; 
@@ -181,8 +132,4 @@ Real Q;
 
 #endif /* NONLINEAR_NEOHOOKE_CC_H_ */
 
-<<<<<<< HEAD
 //#endif
-=======
-//#endif
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76

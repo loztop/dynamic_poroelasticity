@@ -100,12 +100,9 @@ TransientLinearImplicitSystem & system = equation_systems.add_system<TransientLi
  fluid_system_vel.add_variable ("fluid_V_vel", ORDER_HIGH,ELEMENT_TYPE);
  fluid_system_vel.add_variable ("fluid_W_vel", ORDER_HIGH,ELEMENT_TYPE);
  fluid_system_vel.add_variable ("fluid_P", ORDER_LOW,ELEMENT_TYPE);
-<<<<<<< HEAD
 #if FLUID_P_CONST
 fluid_system_vel.add_variable ("fluid_M", ORDER_LOW,ELEMENT_TYPE);
 #endif
-=======
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
  fluid_system_vel.attach_assemble_function (assemble_fluid_vel);
 #endif
 
@@ -139,7 +136,6 @@ pressure_gard_system.add_variable ("p_grad_u", ORDER_HIGH,ELEMENT_TYPE);
         equation_systems.get_system<TransientLinearImplicitSystem>("pressure-grad-system");
 #endif
 
-<<<<<<< HEAD
 #if ANALNEO
 TransientLinearImplicitSystem & anal_system = equation_systems.add_system<TransientLinearImplicitSystem> ("anal-system");
 anal_system.add_variable ("anal_u", ORDER_HIGH,ELEMENT_TYPE);
@@ -151,8 +147,6 @@ anal_system.add_variable ("anal_u", ORDER_HIGH,ELEMENT_TYPE);
         equation_systems.get_system<TransientLinearImplicitSystem>("anal-system");
 #endif
 
-=======
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 TransientLinearImplicitSystem & last_non_linear_soln_system = equation_systems.add_system<TransientLinearImplicitSystem> ("Last-non-linear-soln");
 
 

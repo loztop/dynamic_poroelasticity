@@ -27,12 +27,9 @@ void assemble_pressure_lol (EquationSystems& es,
   TransientLinearImplicitSystem &  fluid_vel_system =
     es.get_system<TransientLinearImplicitSystem> ("fluid-system-vel");
 
-<<<<<<< HEAD
   TransientLinearImplicitSystem & last_non_linear_soln =
     es.get_system<TransientLinearImplicitSystem> ("Last-non-linear-soln");
 
-=======
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
     const unsigned int u_var = system.variable_number ("fluid_m");
     const unsigned int v_var = system.variable_number ("Jacobian");
     const unsigned int w_var = system.variable_number ("res_aux1");
@@ -186,7 +183,6 @@ Real mchap=material.mchap;
 #endif
 
 
-<<<<<<< HEAD
 
 
 for (unsigned int l=0; l<n_u_dofs; l++)
@@ -196,8 +192,6 @@ for (unsigned int l=0; l<n_u_dofs; l++)
 
 Real press=-2*p_solid *(J-1-material.mchap);
 
-=======
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
           // Assemble the u-velocity row
           // uu coupling
           for (unsigned int i=0; i<n_u_dofs; i++)
@@ -211,7 +205,6 @@ Real press=-2*p_solid *(J-1-material.mchap);
              for (unsigned int i=0; i<n_v_dofs; i++)
             for (unsigned int j=0; j<n_v_dofs; j++)
               Kww(i,j) += JxW[qp]*(phi[i][qp]*phi[j][qp]);
-<<<<<<< HEAD
 
 
   for (unsigned int i=0; i<n_p_dofs; i++)
@@ -221,12 +214,6 @@ Real press=-2*p_solid *(J-1-material.mchap);
           for (unsigned int j=0; j<n_u_dofs; j++)
             #if CHAP
              Fu(j) += JxW[qp]*phi[j][qp]*0;
-=======
-        
-          for (unsigned int j=0; j<n_u_dofs; j++)
-            #if CHAP
-             Fu(j) += JxW[qp]*phi[j][qp]*mchap;
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
           #endif
           for (unsigned int j=0; j<n_v_dofs; j++)
              Fv(j) += JxW[qp]*phi[j][qp]*J;
@@ -234,12 +221,9 @@ Real press=-2*p_solid *(J-1-material.mchap);
            for (unsigned int j=0; j<n_w_dofs; j++)
              Fw(j) += JxW[qp]*phi[j][qp]*0;
 
-<<<<<<< HEAD
    for (unsigned int j=0; j<n_p_dofs; j++)
              Fp(j) += JxW[qp]*psi[j][qp]*0;
 
-=======
->>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
         } // end of the quadrature point qp-loop
 #endif
         dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
