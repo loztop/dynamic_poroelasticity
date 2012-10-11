@@ -20,8 +20,13 @@ public:
       dphi(dphi) {
     E = 0.1;
     nu = 0.3;
+<<<<<<< HEAD
    K1=1;
   K2=0;
+=======
+   K1=10000;
+  K2=10;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   }
 #endif
 
@@ -36,8 +41,13 @@ public:
     // mu is the shear modulus is one of several quantities for measuring the stiffness of materials
     //Polyethylene (plastic)  mu= 0.117
     ///Rubber mu=  0.0006
+<<<<<<< HEAD
  K1=1;
   K2=0;
+=======
+ K1=10;
+  K2=10;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
    
     
 

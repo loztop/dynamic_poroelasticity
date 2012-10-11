@@ -1,14 +1,18 @@
 #include "defines.h"
 #include "assemble.h"
 #include <cmath>
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 using namespace std;
 #define PI 3.14159265
 // The matrix assembly function to be called at each time step to
 // prepare for the linear solve.
 void assemble_fluid_bcs (EquationSystems& es)
 {
+<<<<<<< HEAD
 libmesh_assert (system_name == "fluid-system-vel");
     
     const MeshBase& mesh = es.get_mesh();
@@ -109,12 +113,52 @@ fe_face->attach_quadrature_rule (qface.get());
 AutoPtr<FEBase> fe_face_pres (FEBase::build(3, fe_pres_type));             
 AutoPtr<QBase> qface_pres(fe_pres_type.default_quadrature_rule(3-1));  
 fe_face_pres->attach_quadrature_rule (qface_pres.get());
+=======
+  //std::cout<<"Now assembling Boundary Conditions"<<std::endl;  
+
+  // Get a constant reference to the mesh object.
+  const MeshBase& mesh = es.get_mesh();
+  
+const System & ref_sys = es.get_system("Reference-Configuration"); 
+
+TransientLinearImplicitSystem & fluid_system =
+    es.get_system<TransientLinearImplicitSystem> ("fluid-system-vel");
+const unsigned int fluid_system_number = fluid_system.number ();
+  // Numeric ids corresponding to each variable in the system
+    const unsigned int u_var = fluid_system.variable_number ("fluid_U_vel");
+    const unsigned int v_var = fluid_system.variable_number ("fluid_V_vel");
+    const unsigned int w_var = fluid_system.variable_number ("fluid_W_vel");
+    const unsigned int p_var = fluid_system.variable_number ("fluid_P");
+    
+
+FEType fe_vel_type = fluid_system.variable_type(u_var);
+FEType press_vel_type = fluid_system.variable_type(p_var);
+
+std::vector< int > rows;
+std::vector< int > pressure_rows;
+
+ 
+#if DYNAMIC
+    const Real dt    = es.parameters.get<Real>("dt");
+    const Real progress    = es.parameters.get<Real>("progress");
+    const Real time    = es.parameters.get<Real>("time");
+
+#endif
+ test(1);
+ //Build face
+ #if NEUMANN_PRESSURE
+AutoPtr<FEBase> fe_face (FEBase::build(3, fe_vel_type));             
+AutoPtr<QBase> qface(press_vel_type.default_quadrature_rule(3-1));  
+fe_face->attach_quadrature_rule (qface.get());
+
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
     // AutoPtr<FEBase> fe_face (FEBase::build(dim, fe_vel_type));
     // QGauss qface (dim-1, fe_vel_type.default_quadrature_order());
     // const std::vector<Real>& JxW_face = fe_face->get_JxW();
     // const std::vector<std::vector<Real> >& psi_face = fe_face->get_phi();	
 #endif
 
+<<<<<<< HEAD
   test(1);
 
     MeshBase::const_element_iterator       el     = mesh.active_local_elements_begin();
@@ -131,6 +175,45 @@ std::vector< int > pressure_rows;
     {       
       const Elem* elem = *el;
 test(67);
+=======
+  const DofMap & dof_map = fluid_system.get_dof_map();
+
+  DenseMatrix<Number> Ke;
+  DenseVector<Number> Fe;
+
+  DenseSubMatrix<Number>
+    Kuu(Ke), Kuv(Ke), Kuw(Ke), 
+    Kvu(Ke), Kvv(Ke), Kvw(Ke), 
+    Kwu(Ke), Kwv(Ke), Kww(Ke); 
+    
+#if INCOMPRESSIBLE
+  DenseSubMatrix<Number>  Kup(Ke),Kvp(Ke),Kwp(Ke), Kpu(Ke), Kpv(Ke), Kpw(Ke), Kpp(Ke);
+#endif
+    
+  DenseSubVector<Number>
+    Fu(Fe),
+    Fv(Fe),
+    Fw(Fe);
+#if INCOMPRESSIBLE
+  DenseSubVector<Number>    Fp(Fe);
+#endif
+test(2);
+  std::vector<unsigned int> dof_indices;
+  std::vector<unsigned int> dof_indices_u;
+  std::vector<unsigned int> dof_indices_v;
+  std::vector<unsigned int> dof_indices_w;
+  
+#if INCOMPRESSIBLE
+  std::vector<unsigned int> dof_indices_p;
+#endif
+
+  MeshBase::const_element_iterator       el     = mesh.active_local_elements_begin();
+  const MeshBase::const_element_iterator end_el = mesh.active_local_elements_end(); 
+test(66);
+  for ( ; el != end_el; ++el)
+    {    
+      const Elem* elem = *el;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
       dof_map.dof_indices (elem, dof_indices);
       dof_map.dof_indices (elem, dof_indices_u, u_var);
@@ -139,9 +222,12 @@ test(67);
 #if INCOMPRESSIBLE
       dof_map.dof_indices (elem, dof_indices_p, p_var);
 #endif
+<<<<<<< HEAD
 #if FLUID_P_CONST
       dof_map.dof_indices (elem, dof_indices_m, m_var);
 #endif
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
       const unsigned int n_dofs   = dof_indices.size();
       const unsigned int n_u_dofs = dof_indices_u.size(); 
       const unsigned int n_v_dofs = dof_indices_v.size(); 
@@ -149,6 +235,7 @@ test(67);
 #if INCOMPRESSIBLE
       const unsigned int n_p_dofs = dof_indices_p.size();
 #endif
+<<<<<<< HEAD
 test(68);
 
 
@@ -157,6 +244,11 @@ test(68);
       Ke.resize (n_dofs, n_dofs);
       Fe.resize (n_dofs);
 test(69);
+=======
+
+      Ke.resize (n_dofs, n_dofs);
+      Fe.resize (n_dofs);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
       // Similarly, the \p DenseSubVector.reposition () member
       // takes the (row_offset, row_size)
@@ -202,18 +294,24 @@ test(2);
 
   const std::vector<std::vector<Real> >&  phi_face =  fe_face->get_phi();
   const std::vector<std::vector<RealGradient> >& dphi_face = fe_face->get_dphi();
+<<<<<<< HEAD
   
   
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   const std::vector<Real>& JxW_face = fe_face->get_JxW();
   const std::vector<Point>& qface_point = fe_face->get_xyz();
   const std::vector<Point>& face_normals = fe_face->get_normals();
   fe_face->reinit(elem,s);  
 
+<<<<<<< HEAD
   const std::vector<std::vector<Real> >&  psi_face =  fe_face_pres->get_phi();
   const std::vector<std::vector<RealGradient> >& dpsi_face = fe_face_pres->get_dphi();
   fe_face_pres->reinit(elem,s);  
 
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 for (unsigned int ns=0; ns<side->n_nodes(); ns++)
     {
        for (unsigned int n=0; n<elem->n_nodes(); n++){
@@ -221,6 +319,7 @@ for (unsigned int ns=0; ns<side->n_nodes(); ns++)
        Point p;
   for (unsigned int d = 0; d < 3; ++d) {
         unsigned int source_dof = node->dof_number(1, d, 0);
+<<<<<<< HEAD
         Real value = aux_system.current_local_solution->el(source_dof);
         p(d)=value;
     }
@@ -266,6 +365,26 @@ Fw(i) +=  -JxW_face[qp]*val*face_normals[qp](2)*phi_face[i][qp];
       value = -factor*1000*(1-exp(-pow(((time+0.00000001)/10.0),2.0)/0.25)) ;
       //value = -500.0*progress ;
 
+=======
+        Real value = ref_sys.current_local_solution->el(source_dof);
+        p(d)=value;
+    }
+    if ((elem->node(n) == side->node(ns)) && (p(0)<0.01)  )
+{
+    for (unsigned int qp=0; qp<qface->n_points(); qp++)
+    {       
+
+   Real value=0;
+    
+   // value = progress*0.1  ;
+
+     #if CHAP_SWELL
+
+   Real factor=1;
+
+      value = factor*1000*(1-exp(-pow(time,2.0)/0.25)) ;
+     // value = 1000*progress ;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
      #endif
 
@@ -276,6 +395,7 @@ Fw(i) +=  -JxW_face[qp]*val*face_normals[qp](2)*phi_face[i][qp];
       //  Fp(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
         #endif
 
+<<<<<<< HEAD
        
 
 //std::cout<< "p " << p<<std::endl;
@@ -323,6 +443,15 @@ for (unsigned int l=0; l<n_p_dofs; l++)
 
 
 
+=======
+        #if MOMENTUM_NEUMANN_PRESSURE
+        Fu(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
+        Fv(i) += - JxW_face[qp]*value*face_normals[qp](1)*phi_face[i][qp];
+        Fw(i) += - JxW_face[qp]*value*face_normals[qp](2)*phi_face[i][qp];
+        #endif
+        }    
+    } //end qp
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   } //end if 
 
 
@@ -360,7 +489,11 @@ for (unsigned int ns=0; ns<side->n_nodes(); ns++)
 	     Point p;
 	for (unsigned int d = 0; d < 3; ++d) {
       	unsigned int source_dof = node->dof_number(1, d, 0);
+<<<<<<< HEAD
       	Real value = aux_system.current_local_solution->el(source_dof);
+=======
+      	Real value = ref_sys.current_local_solution->el(source_dof);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
       	p(d)=value;
    	}
     
@@ -371,6 +504,7 @@ for (unsigned int ns=0; ns<side->n_nodes(); ns++)
   #if DIRICHLET_VELOCITY
 
 #if SEALED_CUBE
+<<<<<<< HEAD
 
     
 if ((elem->node(n) == side->node(ns)) && (p(0)>1.49)  )
@@ -418,10 +552,49 @@ if ((elem->node(n) == side->node(ns)) && ((p(2)<0.01)  || (p(2)>1.49))  )
        Real value = 0;
        rows.push_back(source_dof);
        system.rhs->set(source_dof,value);
+=======
+if ((elem->node(n) == side->node(ns)) && (p(0)>1.4999)  )
+    {
+      unsigned int source_dof = node->dof_number(fluid_system.number(), 0, 0);
+       Real value = 0;
+       rows.push_back(source_dof);
+       fluid_system.rhs->set(source_dof,value);
+    }  //end if
+    
+if ((elem->node(n) == side->node(ns)) && ((p(1)<0.0001)  || (p(1)>1.4999))  )
+    {
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 1, 0);
+       Real value = 0;
+       rows.push_back(source_dof);
+       fluid_system.rhs->set(source_dof,value);
+
+    }  //end if
+
+if ((elem->node(n) == side->node(ns)) && ((p(2)<0.0001)  || (p(2)>1.4999))  )
+    {
+      unsigned int source_dof = node->dof_number(fluid_system.number(), 2, 0);
+       Real value = 0;
+       rows.push_back(source_dof);
+      fluid_system.rhs->set(source_dof,value);
+
+    }  //end if
+    
+#endif
+    
+    #if DISK_FLOW
+    if ((elem->node(n) == side->node(ns)) && (p(0)<0.1 )  )
+    {
+     for (unsigned int d = 1; d < 3; ++d) {
+        unsigned int source_dof = node->dof_number(fluid_system.number(), d, 0);
+       Real value = 0;
+       rows.push_back(source_dof);
+       fluid_system.rhs->set(source_dof,value);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
     }  //end dimension loop
 
 //std::cout<<"Disk flow"<<std::endl;
     
+<<<<<<< HEAD
        unsigned int source_dof = node->dof_number(system.number(), 0, 0);
     Real value = 0.5* ( (0.75*0.75-(p(1)-0.75)*(p(1)-0.75)) + (0.75*0.75-(p(2)-0.75)*(p(2)-0.75)) ) ;
 value = 0.015* ( (0.75*0.75-(p(1)-0.75)*(p(1)-0.75)) + (0.75*0.75-(p(2)-0.75)*(p(2)-0.75)) )*(1-exp(-pow(time,2.0)/0.25)) ; 
@@ -436,12 +609,20 @@ value = 0.0;
 }
     rows.push_back(source_dof);
       system.rhs->set(source_dof,value);
+=======
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 0, 0);
+    Real value = progress*0.1* ( (0.75*0.75-(p(1)-0.75)*(p(1)-0.75)) + (0.75*0.75-(p(2)-0.75)*(p(2)-0.75)) ) ;
+     //   Real value =0 ;
+    //   rows.push_back(source_dof);
+      // fluid_system.rhs->set(source_dof,value);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
        
     }  //end if
    #endif 
    //DISK_FLOW
 
 
+<<<<<<< HEAD
 /*
 if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
     {
@@ -449,6 +630,28 @@ if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
        Real value = 0;
        rows.push_back(source_dof);
        system.rhs->set(source_dof,value);
+=======
+if ((elem->node(n) == side->node(ns)) && (p(0)<0.1)  )
+    {
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 0, 0);
+
+       //Real value = time*0.6;
+       //rows.push_back(source_dof);
+      // fluid_system.rhs->set(source_dof,value);
+
+             // std::cout<< "value "<<value<<std::endl;
+
+
+    }  //end if
+
+/*
+if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
+    {
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 1, 0);
+       Real value = 0;
+       rows.push_back(source_dof);
+       fluid_system.rhs->set(source_dof,value);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
     }  //end if
   */
@@ -459,6 +662,7 @@ if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
 #if DIRICHLET_PRESSURE
 
 #if CHAP_SWELL
+<<<<<<< HEAD
 
 
     if ((elem->node(n) == side->node(ns)) && (p(0)>1.4999 ) )
@@ -503,6 +707,29 @@ if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001)  )
      }
     }  //end if
 
+=======
+    if ((elem->node(n) == side->node(ns)) && (p(0)>1.4999 ) )
+    {
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 3, 0);
+       if (source_dof <12345678){ //The pressures do not exist everywhere// This is a hack !!
+       Real value = 0;
+       pressure_rows.push_back(source_dof);
+      fluid_system.rhs->set(source_dof,value);
+     }
+    }  //end if
+#endif
+
+/*
+        if ((elem->node(n) == side->node(ns)) && (p(0)<0.01 ) )
+    {
+       unsigned int source_dof = node->dof_number(fluid_system.number(), 3, 0);
+       if (source_dof <12345678){ //The pressures do not exist everywhere// This is a hack !!
+       Real value = 1*time;
+       pressure_rows.push_back(source_dof);
+       fluid_system.rhs->set(source_dof,value);
+     }
+    }  //end if
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 */
 
 
@@ -524,8 +751,13 @@ test(100);
  dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
 
 #if NEUMANN_PRESSURE
+<<<<<<< HEAD
       system.matrix->add_matrix (Ke, dof_indices);
       system.rhs->add_vector    (Fe, dof_indices);
+=======
+      fluid_system.matrix->add_matrix (Ke, dof_indices);
+      fluid_system.rhs->add_vector    (Fe, dof_indices);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #endif
 
 } // end of element loop
@@ -533,6 +765,7 @@ test(100);
 
 #if DIRICHLET_VELOCITY
   test(3);
+<<<<<<< HEAD
   system.matrix->close();
   test(4);
 	system.matrix->zero_rows(rows, 1.0);
@@ -551,6 +784,28 @@ system.matrix->close();
  //    std::cout<<"Fluid rhs->l2_norm () "<<system.rhs->l2_norm ()<<std::endl;
 //system.rhs->print(std::cout);
 //system.matrix->print(std::cout);
+=======
+  fluid_system.matrix->close();
+  test(4);
+	fluid_system.matrix->zero_rows(rows, 1.0);
+#endif
+
+#if DIRICHLET_PRESSURE
+   fluid_system.matrix->close();
+   fluid_system.matrix->zero_rows(pressure_rows, 1.0);
+#endif
+
+test(5);
+fluid_system.rhs->close();
+test(6);
+
+fluid_system.matrix->close();
+//std::cout<<"AFTER BCS fluid_sefffffffffffffffsystem.rhs->l2_norm () "<<fluid_system.rhs->l2_norm ()<<std::endl;
+
+
+//fluid_system.rhs->print(std::cout);
+//fluid_system.matrix->print(std::cout);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 
   return;

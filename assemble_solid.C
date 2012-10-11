@@ -3,8 +3,11 @@
 #include "neohooke_cc.h"
 #include "poro_elastic_cc.h"
 #include "mooney_cc.h"
+<<<<<<< HEAD
 #include "anal_neo_cc.h"
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 //#include "solid_system.h"
 
@@ -74,6 +77,7 @@ test(63);
 #if INCOMPRESSIBLE
   const unsigned int p_var = last_non_linear_soln .variable_number ("p");
 #endif 
+<<<<<<< HEAD
 
 
 
@@ -83,6 +87,8 @@ test(63);
 #endif
 
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   // Get the Finite Element type for "u".  Note this will be
   // the same as the type for "v".
   FEType fe_vel_type = last_non_linear_soln.variable_type(u_var);
@@ -141,10 +147,13 @@ test(66);
   // in future examples.
   const DofMap & dof_map = last_non_linear_soln .get_dof_map();
 
+<<<<<<< HEAD
 #if FLUID_P_CONST 
   const DofMap & dof_map_fluid = fluid_system_vel .get_dof_map();
 #endif
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   // K will be the jacobian
   // F will be the Residual
   DenseMatrix<Number> Ke;
@@ -209,6 +218,29 @@ test(66);
 #endif
 
 
+<<<<<<< HEAD
+=======
+#if COMPRESSIBLE && NEO
+    NeoHookeCurrentConfig material(dphi);    
+#endif
+
+#if INCOMPRESSIBLE && NEO
+  DenseVector<Real> p_stiff;
+  DenseVector<Real> p_res;
+  NeoHookeCurrentConfig material(dphi,psi);
+#endif
+
+#if COMPRESSIBLE && MOONEY
+  MooneyCurrentConfig material(dphi);
+#endif
+    
+#if INCOMPRESSIBLE && MOONEY
+  DenseVector<Real> p_stiff;
+  DenseVector<Real> p_res;
+  MooneyCurrentConfig material(dphi,psi);
+#endif
+
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   // Just calculate jacobian contribution when we need to
   material.calculate_linearized_stiffness = true;
   MeshBase::const_element_iterator       el     = mesh.active_local_elements_begin();
@@ -238,10 +270,13 @@ test(66);
 #if INCOMPRESSIBLE
       const unsigned int n_p_dofs = dof_indices_p.size();
 #endif
+<<<<<<< HEAD
 
 #if FLUID_P_CONST
       dof_map_fluid.dof_indices (elem, dof_indices_m, m_var);
 #endif
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
       // Compute the element-specific data for the current
       // element.  This involves computing the location of the
       // quadrature points (q_point) and the shape functions
@@ -303,6 +338,7 @@ test(66);
       for (unsigned int qp=0; qp<qrule.n_points(); qp++)
         {
 
+<<<<<<< HEAD
 
      Point rX;
  for (unsigned int l=0; l<n_p_dofs; l++)
@@ -313,6 +349,8 @@ rX(2) += psi[l][qp]*ref_sys.current_local_solution->el(dof_indices_w[l]);
             }
 
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 	  #if INCOMPRESSIBLE
 	  Number   p = 0.;
 	  #endif
@@ -377,10 +415,25 @@ grad_u_mat(2)=0.5*(grad_u_mat_old(2)+grad_u_mat(2));
 Real m=0;
 Real p_fluid=0;
 
+<<<<<<< HEAD
 #if FLUID_VEL && CHAP
 for (unsigned int l=0; l<n_p_dofs; l++)
  {
    p_fluid += psi[l][qp]*fluid_system_vel.current_local_solution->el(dof_indices_p[l]);
+=======
+#if FLUID
+for (unsigned int l=0; l<n_u_dofs; l++)
+            {
+              m += phi[l][qp]*fluid_system.current_local_solution->el(dof_indices_u[l]);
+            }
+#endif
+
+
+#if FLUID_VEL && CHAP
+for (unsigned int l=0; l<n_p_dofs; l++)
+ {
+              p_fluid += psi[l][qp]*fluid_system_vel.current_local_solution->el(dof_indices_p[l]);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
  }
 
 
@@ -393,6 +446,7 @@ for (unsigned int l=0; l<n_p_dofs; l++)
 
 p_fluid=0.5*p_fluid+0.5*p_fluid_old;
 
+<<<<<<< HEAD
 
 //p_fluid=0;
 
@@ -416,6 +470,13 @@ for (unsigned int l=0; l<n_p_dofs; l++)
 
 
 material.init_for_qp(grad_u_mat, p, qp, 1.0*m+0.0*m_old, p_fluid);
+=======
+#if DECOUPLE
+p_fluid=0;
+#endif
+
+material.init_for_qp(grad_u_mat, p, qp, m, p_fluid);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #endif
 
 #if !CHAP
@@ -446,6 +507,7 @@ material.init_for_qp(grad_u_mat,p_comp,qp);
 
       	Fu(i) += res(0);              
         Fv(i) += res(1) ; 
+<<<<<<< HEAD
 	Fw(i) += res(2);  
 
 
@@ -460,6 +522,9 @@ body_force.scale(0);
 #if ANALNEO
            Fw(i) += (-1.0)*progress*0.1*JxW[qp]*phi[i][qp];
 #endif
+=======
+	      Fw(i) += res(2);  
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
   #if GRAVITY
   #if STATIC
@@ -467,6 +532,10 @@ body_force.scale(0);
   #endif       
   #if DYNAMIC
         Real grav=0.0;
+<<<<<<< HEAD
+=======
+	   // Fw(i) += progress*0.1*JxW[qp]*phi[i][qp];
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
            Fu(i) += progress*grav*JxW[qp]*phi[i][qp];
   #endif        
 #endif
@@ -476,7 +545,11 @@ body_force.scale(0);
     const Real rho_mix =0.0;
     const Real fac=(2*rho_mix)/(dt*dt);
       for (unsigned int j=0; j<n_u_dofs; j++){
+<<<<<<< HEAD
 	Real value = 1.0*fac*JxW[qp]*phi[i][qp]*phi[j][qp];
+=======
+	Real value = 1*fac*JxW[qp]*phi[i][qp]*phi[j][qp];
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
           Kuu(i,j)+= value;
           Kvv(i,j)+=  value;
           Kww(i,j)+=  value;
@@ -530,9 +603,12 @@ body_force.scale(0);
                     Kuu(i,j)+= 1*JxW[qp]*phi[i][qp]*phi[j][qp];
 #endif
 
+<<<<<<< HEAD
 #if ANALNEO
                     Kww(i,j)+= 1*JxW[qp]*phi[i][qp]*phi[j][qp];
 #endif
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 		      Kuv(i,j)+=  stiff(u_var, v_var);
 		      Kuw(i,j)+=  stiff(u_var, w_var);
 		      
@@ -546,6 +622,7 @@ body_force.scale(0);
                 }
             }
 
+<<<<<<< HEAD
 #if INCOMPRESSIBLE && FLUID_P_CONST
            for (unsigned int i = 0; i < n_p_dofs; i++) {
 
@@ -554,12 +631,23 @@ body_force.scale(0);
 	  p_res.scale(JxW[qp]);
           Fp(i) += p_res(0);
 
+=======
+#if INCOMPRESSIBLE && !CHAP
+           for (unsigned int i = 0; i < n_p_dofs; i++) {
+	  material.get_p_residual(p_res, i);
+	  p_res.scale(JxW[qp]);
+          Fp(i) += p_res(0);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 	  }
     
     for (unsigned int i = 0; i < n_u_dofs; i++) {
           for (unsigned int j = 0; j < n_p_dofs; j++) {
 	    material.get_linearized_uvw_p_stiffness(p_stiff, i, j);
+<<<<<<< HEAD
 	   p_stiff.scale(JxW[qp]);
+=======
+	    p_stiff.scale(JxW[qp]);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
             Kup(i, j) += p_stiff(0);
 	          Kvp(i, j) += p_stiff(1);
             Kwp(i, j) += p_stiff(2);
@@ -577,14 +665,22 @@ body_force.scale(0);
     }
 #endif
 
+<<<<<<< HEAD
 #if CHAP && ! FLUID_P_CONST
+=======
+#if CHAP
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
            for (unsigned int i = 0; i < n_p_dofs; i++) {
          Fp(i) += 0*JxW[qp]*psi[i][qp];
     }
     
     for (unsigned int i = 0; i < n_p_dofs; i++) {
           for (unsigned int j = 0; j < n_p_dofs; j++) {
+<<<<<<< HEAD
             Kpp(i, j) += 1*JxW[qp]*psi[i][qp]*psi[j][qp];
+=======
+            Kpp(i, j) += JxW[qp]*psi[i][qp]*psi[j][qp];
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
     }
     }
 

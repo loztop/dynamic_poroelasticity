@@ -4,11 +4,17 @@
 //#include "solid_system.h"
 #include "poro_elastic_cc.h"
 
+<<<<<<< HEAD
 
 // The matrix assembly function to be called at each time step to
 // prepare for the linear solve.
 
 #if FLUID_VEL
+=======
+#if FLUID_VEL
+// The matrix assembly function to be called at each time step to
+// prepare for the linear solve.
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 void assemble_fluid_vel (EquationSystems& es,
                       const std::string& system_name)
 {
@@ -35,10 +41,13 @@ void assemble_fluid_vel (EquationSystems& es,
     const unsigned int v_var = system.variable_number ("fluid_V_vel");
     const unsigned int w_var = system.variable_number ("fluid_W_vel");
     const unsigned int p_var = system.variable_number ("fluid_P");
+<<<<<<< HEAD
 
 #if FLUID_P_CONST
     const unsigned int m_var = system.variable_number ("fluid_M");
 #endif
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
     
     FEType fe_vel_type = system.variable_type(u_var);
     
@@ -61,17 +70,27 @@ void assemble_fluid_vel (EquationSystems& es,
 
 
     const std::vector<std::vector<Real> >& psi = fe_pres->get_phi();
+<<<<<<< HEAD
       const std::vector<std::vector<RealGradient> >& dpsi = fe_pres->get_dphi();
 
+=======
+    
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
     const DofMap & dof_map = system.get_dof_map();
   
     DenseMatrix<Number> Ke;
     DenseVector<Number> Fe;
   
     DenseSubMatrix<Number>
+<<<<<<< HEAD
     Kuu(Ke), Kuv(Ke), Kuw(Ke), Kup(Ke), 
     Kvu(Ke), Kvv(Ke), Kvw(Ke), Kvp(Ke), 
     Kwu(Ke), Kwv(Ke), Kww(Ke), Kwp(Ke), 
+=======
+    Kuu(Ke), Kuv(Ke), Kuw(Ke), Kup(Ke),
+    Kvu(Ke), Kvv(Ke), Kvw(Ke), Kvp(Ke),
+    Kwu(Ke), Kwv(Ke), Kww(Ke), Kwp(Ke),
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
     Kpu(Ke), Kpv(Ke), Kpw(Ke), Kpp(Ke);
 
   DenseSubVector<Number>
@@ -79,21 +98,27 @@ void assemble_fluid_vel (EquationSystems& es,
     Fv(Fe),
     Fw(Fe),
     Fp(Fe);
+<<<<<<< HEAD
 #if FLUID_P_CONST
    DenseSubVector<Number>  Fm(Fe);
        DenseSubMatrix<Number>  Kwm(Ke), Kvm(Ke), Kum(Ke),Kmu(Ke), Kpm(Ke), Kmv(Ke), Kmw(Ke), Kmp(Ke), Kmm(Ke);
 #endif
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
   std::vector<unsigned int> dof_indices;
   std::vector<unsigned int> dof_indices_u;
   std::vector<unsigned int> dof_indices_v;
   std::vector<unsigned int> dof_indices_w;
   std::vector<unsigned int> dof_indices_p;
+<<<<<<< HEAD
 
 #if FLUID_P_CONST
   std::vector<unsigned int> dof_indices_m;
 #endif
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #if DYNAMIC
 VectorValue<Gradient> grad_u_mat_old;
 const Real dt    = es.parameters.get<Real>("dt");
@@ -115,19 +140,28 @@ const Real non_lin_step    = es.parameters.get<Real>("non_lin_step");
       dof_map.dof_indices (elem, dof_indices_v, v_var);
       dof_map.dof_indices (elem, dof_indices_w, w_var);
       dof_map.dof_indices (elem, dof_indices_p, p_var);
+<<<<<<< HEAD
 #if FLUID_P_CONST
       dof_map.dof_indices (elem, dof_indices_m, m_var);
 #endif
+=======
+
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
       const unsigned int n_dofs   = dof_indices.size();
       const unsigned int n_u_dofs = dof_indices_u.size(); 
       const unsigned int n_v_dofs = dof_indices_v.size(); 
       const unsigned int n_w_dofs = dof_indices_w.size(); 
       const unsigned int n_p_dofs = dof_indices_p.size();
 
+<<<<<<< HEAD
 #if FLUID_P_CONST
       const unsigned int n_m_dofs = dof_indices_m.size();
 #endif
       
+=======
+      fe_vel->reinit  (elem);
+      fe_pres->reinit (elem);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
       Ke.resize (n_dofs, n_dofs);
       Fe.resize (n_dofs);
@@ -152,15 +186,19 @@ const Real non_lin_step    = es.parameters.get<Real>("non_lin_step");
       Kpw.reposition (p_var*n_u_dofs, w_var*n_u_dofs, n_p_dofs, n_w_dofs);
       Kpp.reposition (p_var*n_u_dofs, p_var*n_u_dofs, n_p_dofs, n_p_dofs);
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
       Fu.reposition (u_var*n_u_dofs, n_u_dofs);
       Fv.reposition (v_var*n_u_dofs, n_v_dofs);
       Fw.reposition (w_var*n_u_dofs, n_w_dofs);
       Fp.reposition (p_var*n_u_dofs, n_p_dofs);
 
+<<<<<<< HEAD
 #if FLUID_P_CONST
 
       Kum.reposition (u_var*n_u_dofs, p_var*n_u_dofs + n_p_dofs , n_u_dofs, n_m_dofs);
@@ -181,6 +219,8 @@ const Real non_lin_step    = es.parameters.get<Real>("non_lin_step");
 fe_vel->reinit  (elem);
 fe_pres->reinit (elem);
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
       for (unsigned int qp=0; qp<qrule.n_points(); qp++)
         {
 
@@ -232,6 +272,7 @@ Real Kperm=material.Kperm;
         div_vs+=(dphi[l][qp](d)*u_undefo_current[l]-dphi[l][qp](d)*u_undefo_old[l])/dt; 
     }
 
+<<<<<<< HEAD
     Number   vel_u_s = 0.;
     Number   vel_v_s = 0.;
     Number   vel_w_s = 0.;
@@ -286,6 +327,10 @@ for (unsigned int l=0; l<n_m_dofs; l++)
 #endif
 
 //std::cout<<" dt " <<  dt<<std::endl;
+=======
+
+
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 //Calculate the pressure from the previous time step at given qp.
 Number   p_old = 0.;
@@ -297,10 +342,14 @@ for (unsigned int l=0; l<n_p_dofs; l++)
 div_vs=0.1;
 p_old=0.1;
 #endif
+<<<<<<< HEAD
 
 Real factor=1;
 
 
+=======
+Real factor=1;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
              // Assemble the u-velocity row
             //Mass Matrix needed for darcy flow
           for (unsigned int i=0; i<n_u_dofs; i++){
@@ -313,7 +362,11 @@ Real factor=1;
               Kww(i,j) +=  (1.0/Kperm)*JxW[qp]*(phi[i][qp]*phi[j][qp]);
 
               // Laplacian for stokes flow /Brinkman
+<<<<<<< HEAD
               Real brink_mu=  0.01;
+=======
+              Real brink_mu=0.001;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
               Kuu(i,j) += factor*brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
               Kvv(i,j) += factor*brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
               Kww(i,j) += factor*brink_mu*JxW[qp]*(dphi[i][qp]*dphi[j][qp]);
@@ -327,6 +380,7 @@ Real factor=1;
               Kup(i,j) += -factor*JxW[qp]*psi[j][qp]*dphi[i][qp](0);
               Kvp(i,j) += -factor*JxW[qp]*psi[j][qp]*dphi[i][qp](1);
               Kwp(i,j) += -factor*JxW[qp]*psi[j][qp]*dphi[i][qp](2);
+<<<<<<< HEAD
 }
 }
 
@@ -341,11 +395,22 @@ Real factor=1;
               Kpw(j,i) += JxW[qp]*psi[j][qp]*dphi[i][qp](2);   
           }
 	}
+=======
+
+
+           //the velocity divergence term 
+              Kpu(j,i) += dt/dt*JxW[qp]*psi[j][qp]*dphi[i][qp](0);
+              Kpv(j,i) += dt/dt*JxW[qp]*psi[j][qp]*dphi[i][qp](1);
+              Kpw(j,i) += dt/dt*JxW[qp]*psi[j][qp]*dphi[i][qp](2);
+            }
+          }
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 
 for (unsigned int i=0; i<n_p_dofs; i++){
 
         //Backward euler contribution to rhs
+<<<<<<< HEAD
     //    Fp(i) +=  (p_old/(J*M*fchap))*JxW[qp]*psi[i][qp];
         //Fp(i) += -dt*div_vs*JxW[qp]*psi[i][qp];
         Fp(i) += -1*div_vs*JxW[qp]*psi[i][qp];
@@ -458,10 +523,37 @@ Fm(i) += Kperm*lambda*JxW[qp]*dpsi[i][qp](2)*dpsi[i][qp](2);
 #endif
 
 #endif
+=======
+        Fp(i) +=  (p_old/(J*M*fchap))*JxW[qp]*psi[i][qp];
+        Fp(i) += -dt*div_vs*JxW[qp]*psi[i][qp];
+
+  for (unsigned int j=0; j<n_p_dofs; j++){
+    Kpp(i,j) += (1/(J*M*fchap))*JxW[qp]*psi[i][qp]*(psi[j][qp]);
+    Kpp(i,j) += -dt*(fchapd/(M*pow(fchap,2.0)))*div_vs*JxW[qp]*psi[i][qp]*(psi[j][qp]);
+    }    
+  }
+
+Real q=0;
+Point point = elem->centroid();
+
+if ( (point(0)>0.8)    ){
+q= 0.0;
+}
+            for (unsigned int j=0; j<n_u_dofs; j++){
+             // Fu(j) += JxW[qp]*dphi[j][qp](0)*p_fluid;
+            }
+             for (unsigned int j=0; j<n_v_dofs; j++){
+             // Fv(j) += JxW[qp]*dphi[j][qp](1)*p_fluid;
+            }
+             for (unsigned int j=0; j<n_w_dofs; j++){
+             // Fw(j) += JxW[qp]*dphi[j][qp](2)*p_fluid;
+          }
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
         } // end of the quadrature point qp-loop
 
 
+<<<<<<< HEAD
     dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
 
         system.matrix->add_matrix (Ke, dof_indices);
@@ -471,6 +563,17 @@ Fm(i) += Kperm*lambda*JxW[qp]*dpsi[i][qp](2)*dpsi[i][qp](2);
 
      assemble_fluid_bcs(es);
         std::cout<<" nah "<<std::endl;
+=======
+
+
+        dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
+  
+        system.matrix->add_matrix (Ke, dof_indices);
+        system.rhs->add_vector    (Fe, dof_indices);
+      } // end of element loop
+
+     assemble_fluid_bcs(es);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 
     return;

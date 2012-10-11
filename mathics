@@ -1,0 +1,13 @@
+mathics
+
+A={{lambda1,0,0},{0,lambda2,0},{-a*Z*(lambda1^(-2))*(lambda2^(-1)),-b*Z*(lambda1^(-2))*(lambda2^(-1)),(lambda1^(-2))*(lambda2^(-1))}}
+
+
+At=Transpose[A]
+
+
+S={{lambda1-(lambda1^(-1)),0,-a*Z*(lambda1^(-2))*(lambda2^(-1))},{0,lambda2-(lambda2^(-1)),-b*Z*(lambda1^(-2))*(lambda2^(-1))}, {-a*Z*lambda1^(-2),-b*Z*lambda2^(-2),lambda1^(-1)*lambda2^(-1)-lambda1*lambda2} }
+
+
+
+A*S*At

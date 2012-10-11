@@ -33,6 +33,7 @@ MeshData mesh_data(mesh);
 #endif
 
 #if CUBE
+<<<<<<< HEAD
  /*
  MeshTools::Generation::build_cube (mesh,
                                        10, 5, 5,
@@ -49,6 +50,14 @@ MeshData mesh_data(mesh);
                                        0.0, 1.5,
                                        HEX27);
 
+=======
+ MeshTools::Generation::build_cube (mesh,
+                                       2,2, 2,
+                                       0., 1.5,	
+                                       0., 1.5,
+				                               0., 1.5,
+                                       HEX27);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #endif
 mesh.all_second_order();
 mesh.prepare_for_use();
@@ -56,6 +65,7 @@ mesh.print_info();
 EquationSystems equation_systems (mesh);  
 setup_es(equation_systems);
 Real time     = 0;
+<<<<<<< HEAD
 Real end_time     = 25;
 
 
@@ -63,6 +73,15 @@ const unsigned int n_nonlinear_steps = 20;
 const Real nonlinear_tolerance       = 1.e-2;
 const Real initial_linear_solver_tol = 1.e-8;
 unsigned int n_timesteps = 25;
+=======
+Real end_time     = 1.5;
+
+
+const unsigned int n_nonlinear_steps = 15;
+const Real nonlinear_tolerance       = 1.e-1;
+const Real initial_linear_solver_tol = 1.e-8;
+unsigned int n_timesteps = 10;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 Real dt = end_time/n_timesteps;
 
 
@@ -74,7 +93,11 @@ TecplotIO tec= TecplotIO(equation_systems.get_mesh());
 Real dt_n_minus_1 = dt;
 
 const char* plot_out_file_name ="plot.txt";
+<<<<<<< HEAD
 std::string result_file_name ("Chap_transfer_no_slip");
+=======
+std::string result_file_name ("poro");
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 if (argc >2){
 read_options(n_timesteps,result_file_name,plot_out_file_name,argc, argv);
@@ -108,9 +131,12 @@ TransientLinearImplicitSystem&  fluid_system_vel = equation_systems.get_system<T
 #if ASSEMBLE_RESULTS
 TransientLinearImplicitSystem&  results_system =    equation_systems.get_system<TransientLinearImplicitSystem>("pressure-system-lol");
 #endif
+<<<<<<< HEAD
 #if ANALNEO
 TransientLinearImplicitSystem&  anal =    equation_systems.get_system<TransientLinearImplicitSystem>("anal-system");
 #endif
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 #if PETSC_MUMPS
   PetscLinearSolver<Number>* petsc_linear_solver =dynamic_cast<PetscLinearSolver<Number>*>(newton_update.get_linear_solver());
@@ -127,11 +153,14 @@ TransientLinearImplicitSystem&  unm1 =
 #endif
 
 
+<<<<<<< HEAD
 //Find nodes for result output later;
     const Node *node_0 ; 
     const Node *node_1 ; 
     const Node *node_2 ; 
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 // Loop over all nodes and copy the location from the current system to
   // the auxiliary system.
 const MeshBase::const_node_iterator nd_end =
@@ -139,6 +168,7 @@ const MeshBase::const_node_iterator nd_end =
   for (MeshBase::const_node_iterator nd = equation_systems.get_mesh().local_nodes_begin();
       nd != nd_end; ++nd) {
     const Node *node = *nd; 
+<<<<<<< HEAD
 
 
 
@@ -155,6 +185,9 @@ const MeshBase::const_node_iterator nd_end =
     std::cout<<"node2 "<< (*node_2)(0)<<std::endl;
   }
 
+=======
+  test(4);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
     for (unsigned int d = 0; d < 3; ++d) {
 
       unsigned int dest_dof = node->dof_number(reference.number(), d, 0);
@@ -162,6 +195,7 @@ const MeshBase::const_node_iterator nd_end =
       reference.current_local_solution->set(dest_dof, value);
       reference.solution->set(dest_dof, value);
     }
+<<<<<<< HEAD
 
 
 #if ANALNEO
@@ -195,6 +229,8 @@ Real c1= 0.1;
       reference.solution->set(dest_dof, value);
       }
 */
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 }
 test(5);
 reference.solution->close();
@@ -255,6 +291,7 @@ fluid_system_vel.solution->close();
       equation_systems.parameters.set<Real>("progress") = progress;
       equation_systems.parameters.set<unsigned int>("step") = t_step; 
 
+<<<<<<< HEAD
 
 #if ANALNEO
 
@@ -316,6 +353,8 @@ Real c1= 0.1;
 
 
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #if ADAPTIVE_TIME
 if (progress>0.09){ equation_systems.parameters.set<Real> ("dt") = 0.05; }
 if (progress>0.2){  equation_systems.parameters.set<Real> ("dt") = 0.1;  }
@@ -334,10 +373,13 @@ if (progress>0.5){  equation_systems.parameters.set<Real> ("dt") = 0.1;  }
      *fluid_system.old_local_solution = *fluid_system.current_local_solution;
 #endif
 
+<<<<<<< HEAD
 #if DYNAMIC && FLUID_VEL
      *fluid_system_vel.old_local_solution = *fluid_system_vel.current_local_solution;
 #endif
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #if ASSEMBLE_PRESSURE
      *pressure_system.old_local_solution = *pressure_system.current_local_solution;
 #endif
@@ -456,7 +498,11 @@ Real norm_delta_fluid = 999.999;
 
  if ((norm_delta < 1230.1) ){
 
+<<<<<<< HEAD
   //std::cout<<" Solving fluid " <<  std::endl;
+=======
+  std::cout<<" Solving fluid " <<  std::endl;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 //----------------- Solve the Fluid -------------------------------///
 #if FLUID
@@ -598,14 +644,21 @@ equation_systems.get_system("pressure-system-lol").solve();
 #endif
         } // end nonlinear loop
 
+<<<<<<< HEAD
 /*
 #if CHAP && ASSEMBLE_RESULTS
 Point p1(0,0,0);
 Point p2(0.5,0.5,0.5); //These co ords are not in the reference pos
+=======
+#if CHAP && ASSEMBLE_RESULTS
+Point p1(0,0,0);
+Point p2(0.75,0.75,0.75);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 Point p3(1.5,1.5,1.5);
 
 //outFile << " time: "<< time << "\n";
 
+<<<<<<< HEAD
 //outFile << results_system.point_value(0,p1) << " ";
 //outFile<<results_system.point_value(0,p2)<< " ";
 //outFile<<results_system.point_value(0,p3)<< " ";
@@ -622,6 +675,11 @@ outFile << fluid_system_vel.solution->el(node_2->dof_number(reference.number(), 
 outFile << results_system.point_value(1,p1) << " ";
 outFile<<results_system.point_value(1,p2)<< " ";
 outFile<<results_system.point_value(1,p3)<< " ";
+=======
+outFile << results_system.point_value(0,p1) << " ";
+outFile<<results_system.point_value(0,p2)<< " ";
+outFile<<results_system.point_value(0,p3)<< " ";
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 outFile << fluid_system_vel.point_value(3,p1) << " ";
 outFile<<fluid_system_vel.point_value(3,p2)<< " ";
@@ -629,7 +687,10 @@ outFile<<fluid_system_vel.point_value(3,p3)<< " ";
 
 outFile<< endl;   
 #endif
+<<<<<<< HEAD
 */
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
  last_non_linear_soln.update();      
  newton_update.update(); 
@@ -646,6 +707,10 @@ outFile<< endl;
         OSSRealzeroright(file_name,3,0, t_step + 1);
         file_name << ".e";	  
 	ExodusII_IO(mesh).write_equation_systems (file_name.str(),equation_systems);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   #if WRITE_MESH
 	GmshIO(mesh).write(mesh_out_file_name);
   #endif
@@ -654,9 +719,18 @@ outFile<< endl;
   #if DYNAMIC
  
   std::stringstream file_name;
+<<<<<<< HEAD
 //  file_name << "/ecslab/lorenzb/Dropbox/";
       file_name << "SIM_";
 
+=======
+  #if ! DAHOAM 
+  file_name << "/ecslab/lorenzb/Dropbox/libresults/";
+  #endif
+  #if DAHOAM 
+  file_name << "/home/lorenz/Dropbox/libresults/";
+  #endif
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   file_name << result_file_name;
   file_name << std::setw(2) << std::setfill('0') << t_step;
   file_name << ".e-s.";

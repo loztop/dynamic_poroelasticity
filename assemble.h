@@ -35,6 +35,7 @@ void read_options(unsigned int &  n_timesteps, std::string& result_file_name,con
 Point get_expanding_sphere_bcs(EquationSystems& es, const Elem* elem, int n,double scale);
 Point constrain_tet_nodes(EquationSystems& es, const Elem* elem, int n);
 
+<<<<<<< HEAD
 
 
   void get_traction(DenseVector<Real> & traction, Point rX, const Real progress);
@@ -49,4 +50,6 @@ Point constrain_tet_nodes(EquationSystems& es, const Elem* elem, int n);
   void tensor_mult_vector(DenseVector<Real> & ans, RealTensor tens, Point normal);
 
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #endif 

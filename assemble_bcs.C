@@ -1,7 +1,10 @@
 #include "defines.h"
 #include "assemble.h"
+<<<<<<< HEAD
 #include "anal_neo_cc.h"
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #include <cmath>
 using namespace std;
 #define PI 3.14159265
@@ -30,6 +33,7 @@ TransientLinearImplicitSystem & last_non_linear_soln =
   const unsigned int p_var = last_non_linear_soln.variable_number ("p");
 #endif 
 FEType fe_vel_type = last_non_linear_soln.variable_type(u_var);
+<<<<<<< HEAD
 FEType fe_vel_type_ref = ref_sys.variable_type(u_var);
 
   const unsigned int dim = mesh.mesh_dimension();
@@ -41,17 +45,23 @@ FEType fe_vel_type_ref = ref_sys.variable_type(u_var);
   fe_pres->attach_quadrature_rule (&qrule);
   const std::vector<std::vector<Real> >& psi = fe_pres->get_phi();
   const std::vector<std::vector<RealGradient> >& dphi = fe_vel->get_dphi();
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 std::vector< int > rows;
  
 #if DYNAMIC
     const Real dt    = es.parameters.get<Real>("dt");
     const Real progress    = es.parameters.get<Real>("progress");
+<<<<<<< HEAD
     const Real time    = es.parameters.get<Real>("time");
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #endif
  
  //Build face
  #if TRACTION_BC
+<<<<<<< HEAD
 AutoPtr<FEBase> fe_face (FEBase::build(3, fe_vel_type));          
 AutoPtr<QBase> qface(fe_vel_type.default_quadrature_rule(3-1));
 fe_face->attach_quadrature_rule (qface.get());
@@ -60,6 +70,13 @@ AutoPtr<FEBase> fe_face_ref (FEBase::build(3, fe_vel_type_ref));
 AutoPtr<QBase> qface_ref(fe_vel_type_ref.default_quadrature_rule(3-1));
 fe_face_ref->attach_quadrature_rule (qface_ref.get());
 
+=======
+AutoPtr<FEBase> fe_face (FEBase::build(3, fe_vel_type));
+                
+    AutoPtr<QBase> qface(fe_vel_type.default_quadrature_rule(3-1));
+  
+    fe_face->attach_quadrature_rule (qface.get());
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
     // AutoPtr<FEBase> fe_face (FEBase::build(dim, fe_vel_type));
     // QGauss qface (dim-1, fe_vel_type.default_quadrature_order());
@@ -181,6 +198,7 @@ for (unsigned int s=0; s<elem->n_sides(); s++){
    AutoPtr<Elem> side (elem->build_side(s));
 
 
+<<<<<<< HEAD
 
 
 
@@ -345,6 +363,56 @@ traction_current.scale(0);
 #endif //end NEUMANN_PRESSURE
 
 /*
+=======
+#if PENALTY
+    for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {     
+for (unsigned int n=0; n<elem->n_nodes(); n++){
+test(1);
+      double x_val_ref = ref_sys.current_local_solution->el(dof_indices_u[n]);
+test(2);  
+      double y_val_ref = ref_sys.current_local_solution->el(dof_indices_v[n]);
+      double z_val_ref = ref_sys.current_local_solution->el(dof_indices_w[n]);
+      double rsquared = x_val_ref*x_val_ref + y_val_ref*y_val_ref + z_val_ref*z_val_ref;
+
+      double old_rad = 9;
+      double new_rad = 9;
+      double scale_fac_squared = pow(new_rad,2)/rsquared;
+      double scale_fac = new_rad/pow(rsquared,0.5);
+      scale_fac=0.8;
+test(82);
+
+#if SPHERE 
+  if ((elem->node(n) == side->node(ns)) && (rsquared<50 )  )
+#endif
+#if CUBE 
+  if ((elem->node(n) == side->node(ns)) && (x_val_ref<0.001)  )
+#endif
+  {
+    // Point p_bc=get_expanding_sphere_bcs(es, elem, n,scale_fac);
+ 
+ #if SPHERE 
+ Real u_value = last_non_linear_soln.current_local_solution->el(dof_indices_u[n])-x_val_ref*scale_fac;
+ Real v_value = last_non_linear_soln.current_local_solution->el(dof_indices_v[n])-y_val_ref*scale_fac;
+ Real w_value = last_non_linear_soln.current_local_solution->el(dof_indices_w[n])-z_val_ref*scale_fac;
+#endif
+
+const Real penalty = 1.e10;
+
+      Kuu(n,n) += penalty;
+      Kvv(n,n) += penalty;
+			Kww(n,n) += penalty;
+                 
+			Fu(n) += penalty*u_value;
+      Fv(n) += penalty*v_value;
+			Fw(n) += penalty*w_value;
+    } //end of if x_val>bla
+   } // end n=0; n<elem->n_nodes(); n++ 
+    }// end ns=0; ns<side->n_nodes(); ns++
+ #endif  //end of penalty
+
+test(83);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #if TRACTION_BC
  	const Real penalty = 1.e10;
         Node *noode = side->get_node(0);
@@ -353,7 +421,11 @@ traction_current.scale(0);
         Real y_value = ref_sys.current_local_solution->el(noode->dof_number(1, 1, 0));
         Real z_value = ref_sys.current_local_solution->el(noode->dof_number(1, 2, 0));
 
+<<<<<<< HEAD
         const std::vector<std::vector<Real> >&  phi_face =  fe_face->get_phi();
+=======
+        const std::vector<std::vector<Real> >&  phi_face =                             fe_face->get_phi();
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
         const std::vector<std::vector<RealGradient> >& dphi_face = fe_face->get_dphi();
         const std::vector<Real>& JxW_face = fe_face->get_JxW();
         const std::vector<Point>& qface_point = fe_face->get_xyz();
@@ -362,7 +434,10 @@ traction_current.scale(0);
         fe_face->reinit(elem,s);  
         Real rsq=    x_value*x_value + y_value*y_value +z_value*z_value;         
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 	if( (y_value>0.99) && (x_value>3) )
 	{
                 for (unsigned int qp=0; qp<qface->n_points(); qp++)
@@ -383,9 +458,15 @@ traction_current.scale(0);
 		      }
 		    }     
 		} //end qp
+<<<<<<< HEAD
 	  } //end if
 #endif //end Traction BCs
       */     
+=======
+	       } //end if     
+#endif //end Traction BCs
+           
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 
 
 
@@ -407,6 +488,7 @@ test(84);
 	double rsquared = p(0)*p(0) + p(1)*p(1) + p(2)*p(2);
 test(84);
 
+<<<<<<< HEAD
 
 #if CUBE 
 
@@ -425,6 +507,53 @@ test(84);
 
 #if MOVING_DIRICHLET_BCS
 
+=======
+#if SPHERE 
+  if ((elem->node(n) == side->node(ns)) && (rsquared>50 )  )
+  {
+        double scale_fac =1.02;
+       // Point p_bc=get_expanding_sphere_bcs(es, elem, n,scale_fac);
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+   	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - scale_fac*ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+   	}  //end dimension loop
+   }  //end if
+#endif
+
+   #if CYLINDER 
+  if ((elem->node(n) == side->node(ns)) && ((p(0)*p(0) + p(1)*p(1))>3.8)  )
+  {
+        double scale_fac =1.01;
+  for (unsigned int d = 0; d < 2; ++d) {
+        unsigned int source_dof = node->dof_number(1, d, 0);
+    Real value = last_non_linear_soln.current_local_solution->el(source_dof) - scale_fac*ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+    }  //end dimension loop
+   }  //end if
+
+
+     if ((elem->node(n) == side->node(ns)) && ((p(2)*p(2))>0.249 )  )
+  {
+        double scale_fac =1.0;
+        unsigned int source_dof = node->dof_number(1, 2, 0);
+    Real value = last_non_linear_soln.current_local_solution->el(source_dof) - scale_fac*ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+   }  //end if
+
+#endif
+
+
+#if CUBE 
+
+   #if ! CHAP_SWELL
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   if ((elem->node(n) == side->node(ns)) && (p(0)<0.001 )  )
   {
 	for (unsigned int d = 0; d < 3; ++d) {
@@ -433,6 +562,7 @@ test(84);
         rows.push_back(source_dof);
 	newton_update.rhs->set(source_dof,value);
    	}  //end dimension loop
+<<<<<<< HEAD
 
 
     }  //end if
@@ -442,6 +572,19 @@ test(84);
 	for (unsigned int d = 0; d < 3; ++d) {
 
       	unsigned int source_dof = node->dof_number(1, 0, 0);
+=======
+    }  //end if
+    #endif
+  
+
+#if MOVING_DIRICHLET_BCS
+
+    if ((elem->node(n) == side->node(ns)) && (p(0)>1.499 )  )
+    {
+	for (unsigned int d = 0; d < 3; ++d) {
+
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 	
 	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
 
@@ -451,6 +594,7 @@ test(84);
 
 
 #if DYNAMIC
+<<<<<<< HEAD
  //   if (progress<0.1){
 
       	unsigned int source_dof = node->dof_number(1, 0, 0);
@@ -460,6 +604,13 @@ test(84);
 
 
 
+=======
+  //  if (progress<0.1){
+      	unsigned int source_dof = node->dof_number(1, 0, 0);
+	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof) + sin(progress*PI)*0.2; //sin(progress*PI)*0.1;
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 //}
 #endif
 
@@ -499,6 +650,7 @@ test(84);
 #endif
 
 
+<<<<<<< HEAD
 #if ANALNEO
 
 // if ((elem->node(n) == side->node(ns)) && ( (p(0)<0.001 )  || (p(2)<0.001 ) || (p(2)>0.999 ) || (p(1)<0.001 ) || (p(1)>0.999 )  )   )
@@ -557,6 +709,36 @@ Real Z=p(2);
 #endif
 
 
+=======
+/*
+    if ((elem->node(n) == side->node(ns)) && (p(0)<0.001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 0, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+
+     }  //end if
+ 
+    if ((elem->node(n) == side->node(ns)) && (p(1)<0.0001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 1, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+     }  //end if
+
+
+   if ((elem->node(n) == side->node(ns)) && (p(2)<0.0001 )  )
+    {
+  unsigned int source_dof = node->dof_number(1, 2, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+     }  //end if 
+*/
+
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 #endif       
     } //end nodes in element lopp
 } // end nodes on side loop
@@ -591,7 +773,11 @@ test(87);
 
      newton_update.rhs->close();
      newton_update.matrix->close();
+<<<<<<< HEAD
      std::cout<<"Solid rhs->l2_norm () "<<newton_update.rhs->l2_norm ()<<std::endl;
+=======
+     std::cout<<"AFTER BCS newton_update.rhs->l2_norm () "<<newton_update.rhs->l2_norm ()<<std::endl;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 //newton_update.rhs->print(std::cout);
 
   return;

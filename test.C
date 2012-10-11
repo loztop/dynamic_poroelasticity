@@ -7,7 +7,11 @@
 using namespace std;
 
 void test(int a) {
+<<<<<<< HEAD
 //std::cout << "ex "<< a << std::endl;
+=======
+//zstd::cout << "ex "<< a << std::endl;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
 }
 
 
@@ -118,7 +122,10 @@ ExodusII_IO exo= ExodusII_IO(equation_systems.get_mesh());
   #if STATIC  
         OStringStream file_name;
         file_name << "/ecslab/lorenzb/Dropbox/libresults/cube_with_stokes";
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
         OSSRealzeroright(file_name,3,0, l + 1);
         file_name << ".e";    
   ExodusII_IO(mesh).write_equation_systems (file_name.str(),equation_systems);
@@ -132,19 +139,30 @@ ExodusII_IO exo= ExodusII_IO(equation_systems.get_mesh());
  
   std::stringstream file_name;
   #if ! DAHOAM 
+<<<<<<< HEAD
 //  file_name << "/ecslab/lorenzb/Dropbox/libresults/";
                   file_name << "lolz";
 
+=======
+  file_name << "/ecslab/lorenzb/Dropbox/libresults/";
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   #endif
   #if DAHOAM 
   file_name << "/home/lorenz/Dropbox/libresults/";
   #endif
+<<<<<<< HEAD
   //file_name << "poro_fill_non_linear_t_step_hex"<< l<<"_";
   file_name << std::setw(2) << std::setfill('0') << l;
   file_name << ".e-s.";
   file_name << std::setw(3) << std::setfill('0') << l+1;
   std::cout<<" Printed "<< file_name.str() <<std::endl;
 
+=======
+  file_name << "poro_fill_non_linear_t_step_hex"<< l<<"_";
+  file_name << std::setw(2) << std::setfill('0') << l;
+  file_name << ".e-s.";
+  file_name << std::setw(3) << std::setfill('0') << l+1;
+>>>>>>> 2401f45059a0293beb4a22be9a802b731c757b76
   exo.write_timestep(file_name.str(), equation_systems,l+1,time);
 std::cout<<" Printed "<< file_name.str() <<std::endl;
 
