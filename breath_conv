@@ -1,0 +1,20 @@
+#procs=2
+plotfile='converge2.txt'
+
+make all
+#rm -f plotfile
+#./systems_of_equations_ex1-opt 2 dt2_ plotfile
+#./systems_of_equations_ex1-opt 4 dt4_ plotfile
+#./systems_of_equations_ex1-opt 6 dt6_ plotfile
+#./systems_of_equations_ex1-opt 8 dt8_ plotfile
+#./systems_of_equations_ex1-opt 10 dt10_ plotfile
+#./systems_of_equations_ex1-opt 12 dt12_ plotfile
+#./systems_of_equations_ex1-opt 20 dt20_ plotfile
+#./systems_of_equations_ex1-opt 30 dt30_ plotfile
+./systems_of_equations_ex1-opt 50 dt50_ plotfile
+./systems_of_equations_ex1-opt 80 dt80_ plotfile
+#./systems_of_equations_ex1-opt 100 dt20_ plotfile
+#./systems_of_equations_ex1-opt 200 dt30_ plotfile
+gedit plotfile
+
+

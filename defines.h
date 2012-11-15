@@ -86,11 +86,11 @@ using namespace std;
 #define VERIFY_JACK 0
 #define PETSC_MUMPS 1
 
-#define PRINT_NON_LINEAR 0
+#define PRINT_NON_LINEAR 1
 
 #define CUBE 1
 #define BEAM 0
-#define CUSTOM_MESH 0
+#define CUSTOM_MESH 1
 
 #define STATIC 0
 #define DYNAMIC 1
@@ -131,10 +131,10 @@ using namespace std;
 #define MOMENTUM_NEUMANN_PRESSURE 0
 #define MASS_NEUMANN_PRESSURE 0
 
-#define DIRICHLET_PRESSURE	0
+#define DIRICHLET_PRESSURE	1
 #define DIRICHLET_VELOCITY	1
 #define DISK_FLOW	0
-#define SEALED_CUBE	1
+#define SEALED_CUBE	0
 
 template <typename T> TypeTensor<T> inv(const TypeTensor<T> &A ) {
   double Sub11, Sub12, Sub13;

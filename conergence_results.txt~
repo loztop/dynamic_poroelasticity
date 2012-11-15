@@ -1,0 +1,14 @@
+-0.146533 -0.149309 -0.149274 -0.149307 -0.14932 -0.149329 -0.149345 -0.149338 -0.149355 -0.149359 
+
+
+
+#./systems_of_equations_ex1-opt 2 dt2_ plotfile
+#./systems_of_equations_ex1-opt 4 dt4_ plotfile
+#./systems_of_equations_ex1-opt 6 dt6_ plotfile
+#./systems_of_equations_ex1-opt 8 dt8_ plotfile
+#./systems_of_equations_ex1-opt 10 dt10_ plotfile
+#./systems_of_equations_ex1-opt 12 dt12_ plotfile
+#./systems_of_equations_ex1-opt 20 dt20_ plotfile
+#./systems_of_equations_ex1-opt 30 dt30_ plotfile
+./systems_of_equations_ex1-opt 50 dt50_ plotfile
+./systems_of_equations_ex1-opt 80 dt80_ plotfile - BREAKES

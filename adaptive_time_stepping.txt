@@ -1,0 +1,3 @@
+if (progress>0.09){ equation_systems.parameters.set<Real> ("dt") = 0.05; }
+if (progress>0.2){  equation_systems.parameters.set<Real> ("dt") = 0.1;  }
+if (progress>0.5){  equation_systems.parameters.set<Real> ("dt") = 0.1;  }

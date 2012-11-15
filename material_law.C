@@ -36,7 +36,7 @@ void MaterialConfig::get_residual(DenseVector<Real> & residuum, unsigned int & i
        tensor_to_voigt(sigma, sigma_voigt);
        B_L.vector_mult(residuum, sigma_voigt);  //should this be B_L^{T} * sigma_voigt ?
 
-      // std::cout<< " sigma " << sigma <<std::endl;
+     //  std::cout<< " sigma " << sigma <<std::endl;
 
        }
 
@@ -44,7 +44,7 @@ void MaterialConfig::get_residual(DenseVector<Real> & residuum, unsigned int & i
 void MaterialConfig::get_p_residual(DenseVector<Real> & p_residuum, unsigned int & i) {
        Real detF = F.det();
        p_residuum.resize(1);
-         //     std::cout<<"neo  "<<std::cout;
+      //       std::cout<<"neo  "<<std::cout;
 
        p_residuum(0)=(1/detF) *psi[i][current_qp]*(detF-1);   ///Rp according to chaste fem *psi[i][current_qp] in main code       
 }

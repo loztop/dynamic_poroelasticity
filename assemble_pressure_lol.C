@@ -34,7 +34,9 @@ void assemble_pressure_lol (EquationSystems& es,
     const unsigned int v_var = system.variable_number ("Jacobian");
     const unsigned int w_var = system.variable_number ("res_aux1");
     const unsigned int p_var = system.variable_number ("res_aux2");
-    
+    #if FLUID_P_CONST
+    const unsigned int fluid_m_var = fluid_vel_system.variable_number ("fluid_M");
+    #endif
     FEType fe_vel_type = system.variable_type(u_var);
     
     FEType fe_pres_type = system.variable_type(p_var);
@@ -57,7 +59,7 @@ void assemble_pressure_lol (EquationSystems& es,
 
     const std::vector<std::vector<Real> >& psi = fe_pres->get_phi();
     
-    const DofMap & dof_map = system.get_dof_map();
+  const DofMap & dof_map = system.get_dof_map();
   
     DenseMatrix<Number> Ke;
     DenseVector<Number> Fe;
@@ -82,12 +84,11 @@ void assemble_pressure_lol (EquationSystems& es,
   std::vector<unsigned int> dof_indices_v;
   std::vector<unsigned int> dof_indices_w;
   std::vector<unsigned int> dof_indices_p;
-        const Real dt    = es.parameters.get<Real>("dt");
+  std::vector<unsigned int> dof_indices_m;
 
-std::cout<<" dt " << dt<< std::endl;
+const Real dt    = es.parameters.get<Real>("dt");
    unsigned int step    = es.parameters.get<unsigned int>("step");
            const Real non_lin_step    = es.parameters.get<Real>("non_lin_step");
-std::cout<<" non_lin_step " << non_lin_step<< std::endl;
 std::vector<unsigned int> undefo_index;
 
 
@@ -110,13 +111,17 @@ std::vector<unsigned int> undefo_index;
       dof_map.dof_indices (elem, dof_indices_v, v_var);
       dof_map.dof_indices (elem, dof_indices_w, w_var);
       dof_map.dof_indices (elem, dof_indices_p, p_var);
+#if FLUID_P_CONST
+      dof_map.dof_indices (elem, dof_indices_m, fluid_m_var);
+#endif
 
       const unsigned int n_dofs   = dof_indices.size();
       const unsigned int n_u_dofs = dof_indices_u.size(); 
       const unsigned int n_v_dofs = dof_indices_v.size(); 
       const unsigned int n_w_dofs = dof_indices_w.size(); 
       const unsigned int n_p_dofs = dof_indices_p.size();
-      
+      const unsigned int n_m_dofs = dof_indices_m.size();
+
       fe_vel->reinit  (elem);
       fe_pres->reinit (elem);
 
@@ -171,6 +176,19 @@ for (unsigned int l=0; l<n_p_dofs; l++)
               p_fluid += psi[l][qp]*fluid_vel_system.current_local_solution->el(dof_indices_p[l]);
 }
 
+
+
+#if FLUID_P_CONST
+Number   M_fluid = 0.;
+  std::vector<unsigned int> m_index; 
+
+      std::vector<Number> m_vals;
+      fluid_vel_system.get_dof_map().dof_indices(elem, m_index,4);
+      fluid_vel_system.current_local_solution->get(m_index, m_vals);
+      for (unsigned int l = 0; l != n_p_dofs; l++){
+M_fluid += psi[l][qp]*m_vals[l];
+      }
+#endif
 Real p_solid=0;
 Real m_old=0;
 
@@ -178,6 +196,12 @@ PoroelasticConfig material(dphi,phi);
 
 material.init_for_qp(grad_u_mat, p_solid, 0, m_old,p_fluid);
 Real J=material.J;
+
+
+
+//std::cout<< " J="<<material.J<<" M_fluid="<<M_fluid<<std::endl;
+//std::cout<< " J-M_fluid-1="<<material.J-M_fluid-1<< std::endl;
+
 #if CHAP
 Real mchap=material.mchap;
 #endif

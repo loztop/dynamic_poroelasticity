@@ -52,7 +52,7 @@ using namespace std;
 #define ELEMENT_TYPE LAGRANGE 
 #define ORDER_HIGH SECOND
 #define ORDER_LOW FIRST 
-
+#define INERTIA 1
 
 // Function prototype.  This function will assemble the system
 // matrix and right-hand-side.
@@ -193,7 +193,19 @@ ref_system.add_variable ("w_ref", ORDER_HIGH,ELEMENT_TYPE);
 #endif  
 
 
+#if INERTIA
+system.add_variable ("a_nu", ORDER_HIGH,ELEMENT_TYPE);
+system.add_variable ("b_nu", ORDER_HIGH,ELEMENT_TYPE);
+system.add_variable ("c_nu", ORDER_HIGH,ELEMENT_TYPE);
 
+last_non_linear_soln_system.add_variable ("a", ORDER_HIGH,ELEMENT_TYPE);
+last_non_linear_soln_system.add_variable ("b", ORDER_HIGH,ELEMENT_TYPE);
+last_non_linear_soln_system.add_variable ("c", ORDER_HIGH,ELEMENT_TYPE);
+
+ref_system.add_variable ("a_ref",ORDER_HIGH,ELEMENT_TYPE);
+ref_system.add_variable ("b_ref",ORDER_HIGH,ELEMENT_TYPE);
+ref_system.add_variable ("c_ref",ORDER_HIGH,ELEMENT_TYPE);
+#endif  
 
 
 }

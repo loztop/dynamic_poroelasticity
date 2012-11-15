@@ -21,5 +21,6 @@ void compute_fluid_input(EquationSystems& es, unsigned int qp,const Elem* elem, 
 
 void print_resluts(EquationSystems& es,Real time,Real l);
 
+void integrate_outflow (EquationSystems& es);
 
 #endif 

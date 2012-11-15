@@ -28,8 +28,8 @@ public:
 PoroelasticConfig(const std::vector<std::vector<RealGradient> >& dphi, const std::vector<std::vector<Real> >& psi) :  GeneralMaterialConfig(dphi, psi){
 
 //Stuff I don't really need.
-E = 8.0;
-nu = 0.3;
+E = 100.0;
+nu = 0.2;
 A=1.0; 
 D=1.0; 
 Q=1.0; 

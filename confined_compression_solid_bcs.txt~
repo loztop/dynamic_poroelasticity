@@ -1,0 +1,152 @@
+
+for (unsigned int s=0; s<elem->n_sides(); s++){
+   if (elem->neighbor(s) == NULL)
+   {		
+   AutoPtr<Elem> side (elem->build_side(s));
+
+
+
+
+for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+       for (unsigned int n=0; n<elem->n_nodes(); n++){
+    Node *node = elem->get_node(n);
+       Point p;
+  for (unsigned int d = 0; d < 3; ++d) {
+        unsigned int source_dof = node->dof_number(1, d, 0);
+        Real value = ref_sys.current_local_solution->el(source_dof);
+        p(d)=value;
+    } 
+  }    
+}
+
+#if DIRICHLET_CLASSIC
+    for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+     for (unsigned int n=0; n<elem->n_nodes(); n++){
+       Node *node = elem->get_node(n);
+	Point p;
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+      	Real value = ref_sys.current_local_solution->el(source_dof);
+      	p(d)=value;
+   	}
+	
+//Fix the bottom
+
+    if ((elem->node(n) == side->node(ns)) && (p(0)<0.001 )  )
+    {
+	for (unsigned int d = 0; d < 3; ++d) {
+  unsigned int source_dof = node->dof_number(1, d, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+}
+     } 
+
+//Constrain top
+
+    if ((elem->node(n) == side->node(ns)) && (p(0)>0.999 )  )
+    {
+	for (unsigned int d = 1; d < 3; ++d) {
+  unsigned int source_dof = node->dof_number(1, d, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+}
+
+  unsigned int source_dof = node->dof_number(1, 0, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof)+progress*0.5;
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+
+
+
+     } 
+
+
+
+
+
+    } //end nodes in element lopp
+} // end nodes on side loop
+#endif
+
+
+/*
+#if TRACTION_BC
+  const std::vector<std::vector<Real> >&  phi_face =  fe_face->get_phi();
+  const std::vector<std::vector<RealGradient> >& dphi_face = fe_face->get_dphi();
+  const std::vector<Real>& JxW_face = fe_face->get_JxW();
+  const std::vector<Point>& qface_point = fe_face->get_xyz();
+  const std::vector<Point>& face_normals = fe_face->get_normals();
+  fe_face->reinit(elem,s);  
+
+  const std::vector<Point>& qface_point_ref = fe_face_ref->get_xyz();
+  fe_face_ref->reinit(elem,s);  
+
+
+for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+       for (unsigned int n=0; n<elem->n_nodes(); n++){
+    Node *node = elem->get_node(n);
+       Point p;
+  for (unsigned int d = 0; d < 3; ++d) {
+        unsigned int source_dof = node->dof_number(1, d, 0);
+        Real value = ref_sys.current_local_solution->el(source_dof);
+        p(d)=value;
+    }
+
+
+ 
+   if ((elem->node(n) == side->node(ns)) && (p(0)>0.999)   )
+{
+for (unsigned int qp=0; qp<qface->n_points(); qp++)
+    {
+
+
+std::vector<unsigned int> undefo_index;
+
+   Point p_qp_ref;
+     for (unsigned int d = 0; d < 3; ++d) {
+      std::vector<Number> u_undefo;
+      ref_sys.get_dof_map().dof_indices(elem, undefo_index,d);
+      ref_sys.current_local_solution->get(undefo_index, u_undefo);
+      for (unsigned int l = 0; l != n_u_dofs; l++){
+         p_qp_ref(d) += phi_face[l][qp]*u_undefo[l]; 
+
+       }
+    }
+
+Real value = -100;
+
+       for (unsigned int i=0; i<phi_face.size(); i++){
+     
+       Fu(i) += - JxW_face[qp]*value*phi_face[i][qp];
+     //  Fu(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
+        }
+
+          for (unsigned int i=0; i<phi_face.size(); i++){
+            for (unsigned int j=0; j<phi_face.size(); j++){
+Kuu(i,j) += JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+          }
+        }  
+   
+//iHat*anal_u +jHat*anal_v + kHat*anal_w
+
+
+    } //end qp
+  } //end if 
+
+  }    
+}
+#endif //end TRACTION
+ 
+*/
+
+
+
+  
+ }//end elem->neighbor(s) == NULL 
+ }// end s=0; s<elem->n_sides(); s++
+

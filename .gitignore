@@ -2,8 +2,10 @@
 *.md
 *.C~
 
+#Executable files
 systems_of_equations_ex1-dbg
 systems_of_equations_ex1-opt
+*.o
 
 # Compiled Object files
 *.slo

@@ -1,0 +1,187 @@
+
+for (unsigned int s=0; s<elem->n_sides(); s++){
+   if (elem->neighbor(s) == NULL)
+   {		
+   AutoPtr<Elem> side (elem->build_side(s));
+
+
+
+
+
+#if TRACTION_BC
+  const std::vector<std::vector<Real> >&  phi_face =  fe_face->get_phi();
+  const std::vector<std::vector<RealGradient> >& dphi_face = fe_face->get_dphi();
+  const std::vector<Real>& JxW_face = fe_face->get_JxW();
+  const std::vector<Point>& qface_point = fe_face->get_xyz();
+  const std::vector<Point>& face_normals = fe_face->get_normals();
+  fe_face->reinit(elem,s);  
+
+  const std::vector<Point>& qface_point_ref = fe_face_ref->get_xyz();
+  fe_face_ref->reinit(elem,s);  
+
+
+for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+       for (unsigned int n=0; n<elem->n_nodes(); n++){
+    Node *node = elem->get_node(n);
+       Point p;
+  for (unsigned int d = 0; d < 3; ++d) {
+        unsigned int source_dof = node->dof_number(1, d, 0);
+        Real value = ref_sys.current_local_solution->el(source_dof);
+        p(d)=value;
+    }
+  }    
+}
+#endif //end NEUMANN_PRESSURE
+
+/*
+#if TRACTION_BC
+ 	const Real penalty = 1.e10;
+        Node *noode = side->get_node(0);
+    	unsigned int source_dof = noode->dof_number(1, 0, 0);
+        Real x_value = ref_sys.current_local_solution->el(noode->dof_number(1, 0, 0));
+        Real y_value = ref_sys.current_local_solution->el(noode->dof_number(1, 1, 0));
+        Real z_value = ref_sys.current_local_solution->el(noode->dof_number(1, 2, 0));
+
+        const std::vector<std::vector<Real> >&  phi_face =  fe_face->get_phi();
+        const std::vector<std::vector<RealGradient> >& dphi_face = fe_face->get_dphi();
+        const std::vector<Real>& JxW_face = fe_face->get_JxW();
+        const std::vector<Point>& qface_point = fe_face->get_xyz();
+        const std::vector<Point>& face_normals =
+        fe_face->get_normals();
+        fe_face->reinit(elem,s);  
+        Real rsq=    x_value*x_value + y_value*y_value +z_value*z_value;         
+
+
+	if( (y_value>0.99) && (x_value>3) )
+	{
+                for (unsigned int qp=0; qp<qface->n_points(); qp++)
+                  {
+                    const Number value = +10;
+                                                         
+                    for (unsigned int i=0; i<phi_face.size(); i++){
+
+                     Fu(i) += - JxW_face[qp]*value*face_normals[qp](0)*phi_face[i][qp];
+                     Fv(i) += - JxW_face[qp]*value*face_normals[qp](1)*phi_face[i][qp];
+                     Fw(i) += - JxW_face[qp]*value*face_normals[qp](2)*phi_face[i][qp];
+		    }
+                    for (unsigned int i=0; i<phi_face.size(); i++){
+                      for (unsigned int j=0; j<phi_face.size(); j++){
+	Kuu(i,j) += value*face_normals[qp](0)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+	Kvv(i,j) += value*face_normals[qp](1)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+	Kww(i,j) += value*face_normals[qp](2)*JxW_face[qp]*phi_face[i][qp]*phi_face[j][qp];
+		      }
+		    }     
+		} //end qp
+	  } //end if
+#endif //end Traction BCs
+      */     
+
+
+
+
+#if DIRICHLET_CLASSIC
+//Apply Dirichlet Bcs properly
+test(84);
+    for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+     for (unsigned int n=0; n<elem->n_nodes(); n++){
+       Node *node = elem->get_node(n);
+	Point p;
+
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+      	Real value = ref_sys.current_local_solution->el(source_dof);
+      	p(d)=value;
+   	}
+
+test(84);
+
+
+#if CUBE 
+
+  
+
+#if MOVING_DIRICHLET_BCS
+
+  if ((elem->node(n) == side->node(ns)) && (p(0)<0.001 )  )
+  {
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+   	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+   	}  //end dimension loop
+
+
+/*
+//Also constrain velocities
+for (unsigned int d = 4; d < 6; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+   	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+   	}  //end dimension loop
+*/
+
+
+
+    }  //end if
+
+    if ((elem->node(n) == side->node(ns)) && (p(0)>1.49 )  )
+    {
+	for (unsigned int d = 0; d < 3; ++d) {
+
+      	unsigned int source_dof = node->dof_number(1, 0, 0);
+	
+	Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+value=0;
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+   	}  //end dimension loop
+
+
+#if DYNAMIC
+ //   if (progress<0.1){
+
+unsigned int source_dof = node->dof_number(1, 0, 0);
+//Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof) - sin(progress*PI)*0.5; 
+
+
+Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof) + progress*0.6;
+
+if (progress <0.5)
+{
+value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof) + progress*0.4;
+}
+
+
+
+
+        rows.push_back(source_dof);
+	newton_update.rhs->set(source_dof,value);
+
+
+
+//}
+#endif
+
+     }  //end if
+     
+#endif
+     
+
+
+
+#endif       
+    } //end nodes in element lopp
+} // end nodes on side loop
+#endif
+
+
+  
+ }//end elem->neighbor(s) == NULL 
+ }// end s=0; s<elem->n_sides(); s++
+test(87);

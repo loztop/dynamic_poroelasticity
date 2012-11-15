@@ -1,0 +1,26 @@
+#if FIXED_MESH
+	grad_u_mat(0) = grad_u_mat(1) = grad_u_mat(2) = 0;
+    for (unsigned int d = 0; d < dim; ++d) {
+      std::vector<Number> X_undefo;
+      std::vector<Number> X_disp;
+
+      last_non_linear_soln.get_dof_map().dof_indices(elem, undefo_index,d);
+      last_non_linear_soln.current_local_solution->get(undefo_index, X_disp);
+
+      for (unsigned int l = 0; l != n_u_dofs; l++)
+        grad_u_mat(d).add_scaled(dphi[l][qp], X_disp[l]); // u_current(l)); // -
+    }
+
+grad_u_mat_old(0) = grad_u_mat_old(1) = grad_u_mat_old(2) = 0;
+    for (unsigned int d = 0; d < dim; ++d) {
+      std::vector<Number> X_undefo;
+      std::vector<Number> X_disp;
+      last_non_linear_soln.get_dof_map().dof_indices(elem, undefo_index,d);
+      last_non_linear_soln.old_local_solution->get(undefo_index, X_disp);
+      for (unsigned int l = 0; l != n_u_dofs; l++)
+        grad_u_mat_old(d).add_scaled(dphi[l][qp],X_disp[l]); 
+    }
+grad_u_mat(0)=0.5*(grad_u_mat_old(0)+grad_u_mat(0));
+grad_u_mat(1)=0.5*(grad_u_mat_old(1)+grad_u_mat(1));
+grad_u_mat(2)=0.5*(grad_u_mat_old(2)+grad_u_mat(2));
+#endif

@@ -26,7 +26,7 @@ public:
   NeoHookeCurrentConfig(
       const std::vector<std::vector<RealGradient> >& dphi) :
       dphi(dphi) {
-    E = 0.1;
+    E = 100;
     nu = 0.3;
   }
 #endif
@@ -38,7 +38,7 @@ public:
       const std::vector<std::vector<RealGradient> >& dphi,   const std::vector<std::vector<Real> >& psi) :
       dphi(dphi),psi(psi) {
    E = 1;
-    nu = 0.3;
+    nu = 0.2;
     // mu is the shear modulus is one of several quantities for measuring the stiffness of materials
     //Polyethylene (plastic)  mu= 0.117
     ///Rubber mu=  0.0006

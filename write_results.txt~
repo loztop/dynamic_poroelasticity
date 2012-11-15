@@ -1,0 +1,31 @@
+#if WRITE_RESULTS
+
+outFile.open(plot_out_file_name, std::ios_base::app); 
+
+//integrate_outflow (equation_systems);
+
+/*
+outFile << results_system.solution->el(node_0->dof_number(reference.number(), 1, 0)) << " ";
+outFile << results_system.solution->el(node_1->dof_number(reference.number(), 1, 0)) << " ";
+outFile << results_system.solution->el(node_2->dof_number(reference.number(), 1, 0)) << " ";
+
+
+outFile << fluid_system_vel.solution->el(node_0->dof_number(reference.number(), 3, 0)) << " ";
+outFile << fluid_system_vel.solution->el(node_1->dof_number(reference.number(), 3, 0)) << " ";
+outFile << fluid_system_vel.solution->el(node_2->dof_number(reference.number(), 3, 0)) << " ";
+*/
+
+
+
+//outFile << last_non_linear_soln.solution->el(node_0->dof_number(reference.number(), 1, 0)) << " ";
+
+outFile << last_non_linear_soln.solution->el(node_0->dof_number(reference.number(), 1, 0)) << " ";
+outFile << last_non_linear_soln.solution->el(node_1->dof_number(reference.number(), 1, 0)) << " ";
+outFile << last_non_linear_soln.solution->el(node_2->dof_number(reference.number(), 1, 0)) << " ";
+
+std::cout<< last_non_linear_soln.solution->el(node_0->dof_number(reference.number(), 1, 0)) <<std::endl;
+std::cout<< last_non_linear_soln.solution->el(node_0->dof_number(reference.number(), 1, 0)) <<std::endl;
+std::cout<< last_non_linear_soln.solution->el(node_0->dof_number(reference.number(), 1, 0)) <<std::endl;
+
+outFile.close();      // Step #5 - Close file.
+#endif

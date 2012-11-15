@@ -12,7 +12,7 @@ void GeneralMaterialConfig::get_residual(DenseVector<Real> & residuum, unsigned 
        tensor_to_voigt(sigma, sigma_voigt);
        B_L.vector_mult(residuum, sigma_voigt);  //should this be B_L^{T} * sigma_voigt ?
 
-      // std::cout<< " sigma " << sigma <<std::endl;
+     //  std::cout<< " sigma " << sigma <<std::endl;
 
        }
 

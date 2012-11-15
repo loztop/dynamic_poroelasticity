@@ -5,6 +5,9 @@
 #include "mooney_cc.h"
 #include "anal_neo_cc.h"
 
+#define INERTIA 1
+
+#define DT 0
 
 //#include "solid_system.h"
 
@@ -21,6 +24,7 @@ void assemble_solid (EquationSystems& es,
   PerfLog perf_log("Assemble");
   perf_log.push("assemble stiffness");
 #endif
+
     // Get a reference to the auxiliary system
   //TransientExplicitSystem& aux_system = es.get_system<TransientExplicitSystem>("Newton-update");
 
@@ -34,26 +38,16 @@ void assemble_solid (EquationSystems& es,
   // The dimension that we are running
   const unsigned int dim = mesh.mesh_dimension();
   
-  test(61);
   // Get a reference to the Stokes system object.
   TransientLinearImplicitSystem & newton_update =
    es.get_system<TransientLinearImplicitSystem> ("Newton-update");
-
 
   // New
    TransientLinearImplicitSystem & last_non_linear_soln =
     es.get_system<TransientLinearImplicitSystem> ("Last-non-linear-soln");
 
-#if FLUID && PORO
- TransientLinearImplicitSystem & fluid_system =
-    es.get_system<TransientLinearImplicitSystem> ("fluid-system");
-#endif
-
-#if FLUID_VEL && PORO
  TransientLinearImplicitSystem & fluid_system_vel =
     es.get_system<TransientLinearImplicitSystem> ("fluid-system-vel");
-#endif
-
 
 #if VELOCITY
 TransientLinearImplicitSystem&  velocity = es.get_system<TransientLinearImplicitSystem>("velocity-system");
@@ -151,18 +145,19 @@ test(66);
   DenseVector<Number> Fe;
 
   DenseSubMatrix<Number>
-    Kuu(Ke), Kuv(Ke), Kuw(Ke), 
-    Kvu(Ke), Kvv(Ke), Kvw(Ke), 
+    Kuu(Ke), Kuv(Ke), Kuw(Ke),  
+    Kvu(Ke), Kvv(Ke), Kvw(Ke),  
     Kwu(Ke), Kwv(Ke), Kww(Ke); 
     
+
+
+
 #if INCOMPRESSIBLE
   DenseSubMatrix<Number>  Kup(Ke),Kvp(Ke),Kwp(Ke), Kpu(Ke), Kpv(Ke), Kpw(Ke), Kpp(Ke);
  #endif;
     
   DenseSubVector<Number>
-    Fu(Fe),
-    Fv(Fe),
-    Fw(Fe);
+    Fu(Fe), Fv(Fe), Fw(Fe);
 #if INCOMPRESSIBLE
   DenseSubVector<Number>    Fp(Fe);
 #endif
@@ -177,37 +172,55 @@ test(66);
 #if INCOMPRESSIBLE
   std::vector<unsigned int> dof_indices_p;
 #endif
-  // Find out what the timestep size parameter is from the system, and
-  // the value of theta for the theta method.  We use implicit Euler (theta=1)
-  // for this simulation even though it is only first-order accurate in time.
-  // The reason for this decision is that the second-order Crank-Nicolson
-  // method is notoriously oscillatory for problems with discontinuous
-  // initiaFl data such as the lid-driven cavity.  Therefore,
-  // we sacrifice accuracy in time for stability, but since the solution
-  // reaches steady state relatively quickly we can afford to take small
-  // timesteps.  If you monitor the initial nonlinear residual for this
-  // simulation, you should see that it is monotonically decreasing in time.
- // const Real dt    = es.parameters.get<Real>("dt");
-  // const Real time  = es.parameters.get<Real>("time");
- // const Real theta = 1.;
-    
+   
+
+#if INERTIA
+test(67);
+  const unsigned int a_var = last_non_linear_soln.variable_number ("a");
+  const unsigned int b_var = last_non_linear_soln.variable_number ("b");
+  const unsigned int c_var = last_non_linear_soln.variable_number ("c");
+
+//B block
+  DenseSubMatrix<Number>
+  Kua(Ke), Kub(Ke), Kuc(Ke),
+  Kva(Ke), Kvb(Ke), Kvc(Ke),
+  Kwa(Ke), Kwb(Ke), Kwc(Ke); 
+
+//C block
+  DenseSubMatrix<Number>
+  Kau(Ke), Kav(Ke), Kaw(Ke),
+  Kbu(Ke), Kbv(Ke), Kbw(Ke),
+  Kcu(Ke), Kcv(Ke), Kcw(Ke);
+
+//D block
+  DenseSubMatrix<Number>
+  Kaa(Ke), Kab(Ke), Kac(Ke),
+  Kba(Ke), Kbb(Ke), Kbc(Ke),
+  Kca(Ke), Kcb(Ke), Kcc(Ke);
+
+  DenseSubVector<Number>
+  Fa(Fe), Fb(Fe), Fc(Fe);
+
+  std::vector<unsigned int> dof_indices_a;
+  std::vector<unsigned int> dof_indices_b;
+  std::vector<unsigned int> dof_indices_c;
+test(68);
+#endif
+
     DenseMatrix<Real> stiff;
   DenseVector<Real> res;
   VectorValue<Gradient> grad_u_mat;
 
-#if DYNAMIC
   VectorValue<Gradient> grad_u_mat_old;
     const Real dt    = es.parameters.get<Real>("dt");
     const Real progress    = es.parameters.get<Real>("progress");
-#endif
+
 
 #if PORO 
   DenseVector<Real> p_stiff;
   DenseVector<Real> p_res;
-  //Real m = 0.0*progress;
   PoroelasticConfig material(dphi,psi);
 #endif
-
 
   // Just calculate jacobian contribution when we need to
   material.calculate_linearized_stiffness = true;
@@ -215,15 +228,10 @@ test(66);
   const MeshBase::const_element_iterator end_el = mesh.active_local_elements_end(); 
 
   for ( ; el != end_el; ++el)
-    {    
-      // Store a pointer to the element we are currently
-      // working on.  This allows for nicer syntax later.
+    {  
+test(69);  
       const Elem* elem = *el;
       
-      // Get the degree of freedom indices for the
-      // current element.  These define where in the global
-      // matrix and right-hand-side this element will
-      // contribute to.
       dof_map.dof_indices (elem, dof_indices);
       dof_map.dof_indices (elem, dof_indices_u, u_var);
       dof_map.dof_indices (elem, dof_indices_v, v_var);
@@ -242,11 +250,6 @@ test(66);
 #if FLUID_P_CONST
       dof_map_fluid.dof_indices (elem, dof_indices_m, m_var);
 #endif
-      // Compute the element-specific data for the current
-      // element.  This involves computing the location of the
-      // quadrature points (q_point) and the shape functions
-      // (phi, dphi) for the current element.
-	
       //elem->print_info();
 
       fe_vel->reinit  (elem);
@@ -258,8 +261,6 @@ test(66);
       Ke.resize (n_dofs, n_dofs);
       Fe.resize (n_dofs);
 
-      // Similarly, the \p DenseSubVector.reposition () member
-      // takes the (row_offset, row_size)
       Kuu.reposition (u_var*n_u_dofs, u_var*n_u_dofs, n_u_dofs, n_u_dofs);
       Kuv.reposition (u_var*n_u_dofs, v_var*n_u_dofs, n_u_dofs, n_v_dofs);
       Kuw.reposition (u_var*n_u_dofs, w_var*n_u_dofs, n_u_dofs, n_w_dofs);
@@ -278,13 +279,14 @@ test(66);
       Kww.reposition (w_var*n_w_dofs, w_var*n_w_dofs, n_w_dofs, n_w_dofs);
       #if INCOMPRESSIBLE
       Kwp.reposition (w_var*n_w_dofs, p_var*n_w_dofs, n_w_dofs, n_p_dofs);
-      
-      
       Kpu.reposition (p_var*n_u_dofs, u_var*n_u_dofs, n_p_dofs, n_u_dofs);
       Kpv.reposition (p_var*n_u_dofs, v_var*n_u_dofs, n_p_dofs, n_v_dofs);
       Kpw.reposition (p_var*n_u_dofs, w_var*n_u_dofs, n_p_dofs, n_w_dofs);
       Kpp.reposition (p_var*n_u_dofs, p_var*n_u_dofs, n_p_dofs, n_p_dofs);
       #endif
+
+
+
       
       Fu.reposition (u_var*n_u_dofs, n_u_dofs);
       Fv.reposition (v_var*n_u_dofs, n_v_dofs);
@@ -293,29 +295,155 @@ test(66);
       Fp.reposition (p_var*n_u_dofs, n_p_dofs);
       #endif
 
+
+
+
+#if INERTIA
+
+//B block
+   Kua.reposition (u_var*n_u_dofs, 3*n_u_dofs + n_p_dofs, n_u_dofs, n_u_dofs);
+   Kub.reposition (u_var*n_u_dofs, 4*n_u_dofs + n_p_dofs, n_u_dofs, n_v_dofs);
+   Kuc.reposition (u_var*n_u_dofs, 5*n_u_dofs + n_p_dofs, n_u_dofs, n_w_dofs);
+   Kva.reposition (v_var*n_v_dofs, 3*n_u_dofs + n_p_dofs, n_v_dofs, n_u_dofs);
+   Kvb.reposition (v_var*n_v_dofs, 4*n_u_dofs + n_p_dofs, n_v_dofs, n_v_dofs);
+   Kvc.reposition (v_var*n_v_dofs, 5*n_u_dofs + n_p_dofs, n_v_dofs, n_w_dofs);
+   Kwa.reposition (w_var*n_w_dofs, 3*n_u_dofs + n_p_dofs, n_w_dofs, n_u_dofs);
+   Kwb.reposition (w_var*n_w_dofs, 4*n_u_dofs + n_p_dofs, n_w_dofs, n_v_dofs);
+   Kwc.reposition (w_var*n_w_dofs, 5*n_u_dofs + n_p_dofs, n_w_dofs, n_w_dofs);
+
+test(701);  
+//C block
+   Kau.reposition (3*n_u_dofs + n_p_dofs, u_var*n_u_dofs, n_u_dofs, n_u_dofs);
+   Kav.reposition (3*n_u_dofs + n_p_dofs, v_var*n_u_dofs, n_u_dofs, n_v_dofs);
+   Kaw.reposition (3*n_u_dofs + n_p_dofs, w_var*n_u_dofs, n_u_dofs, n_w_dofs);
+   Kbu.reposition (4*n_u_dofs + n_p_dofs, u_var*n_v_dofs, n_v_dofs, n_u_dofs);
+   Kbv.reposition (4*n_u_dofs + n_p_dofs, v_var*n_v_dofs, n_v_dofs, n_v_dofs);
+   Kbw.reposition (4*n_u_dofs + n_p_dofs, w_var*n_v_dofs, n_v_dofs, n_w_dofs);
+   Kcu.reposition (5*n_u_dofs + n_p_dofs, u_var*n_w_dofs, n_w_dofs, n_u_dofs);
+   Kcv.reposition (5*n_u_dofs + n_p_dofs, v_var*n_w_dofs, n_w_dofs, n_v_dofs);
+   Kcw.reposition (5*n_u_dofs + n_p_dofs, w_var*n_w_dofs, n_w_dofs, n_w_dofs);
+
+//D block
+   Kaa.reposition (3*n_u_dofs + n_p_dofs, 3*n_u_dofs + n_p_dofs, n_u_dofs, n_u_dofs);
+   Kab.reposition (3*n_u_dofs + n_p_dofs, 4*n_u_dofs + n_p_dofs, n_u_dofs, n_v_dofs);
+   Kac.reposition (3*n_u_dofs + n_p_dofs, 5*n_u_dofs + n_p_dofs, n_u_dofs, n_w_dofs);
+   Kba.reposition (4*n_u_dofs + n_p_dofs, 3*n_u_dofs + n_p_dofs, n_v_dofs, n_u_dofs);
+   Kbb.reposition (4*n_u_dofs + n_p_dofs, 4*n_u_dofs + n_p_dofs, n_v_dofs, n_v_dofs);
+   Kbc.reposition (4*n_u_dofs + n_p_dofs, 5*n_u_dofs + n_p_dofs, n_v_dofs, n_w_dofs);
+   Kca.reposition (5*n_u_dofs + n_p_dofs, 3*n_u_dofs + n_p_dofs, n_w_dofs, n_u_dofs);
+   Kcb.reposition (5*n_u_dofs + n_p_dofs, 4*n_u_dofs + n_p_dofs, n_w_dofs, n_v_dofs);
+   Kcc.reposition (5*n_u_dofs + n_p_dofs, 5*n_u_dofs + n_p_dofs, n_w_dofs, n_w_dofs);
+
+
+Fa.reposition (3*n_u_dofs + n_p_dofs, n_u_dofs);
+Fb.reposition (4*n_u_dofs + n_p_dofs, n_v_dofs);
+Fc.reposition (5*n_u_dofs + n_p_dofs, n_w_dofs);
+
+  dof_map.dof_indices (elem, dof_indices_a, a_var);
+  dof_map.dof_indices (elem, dof_indices_b, b_var);
+  dof_map.dof_indices (elem, dof_indices_c, c_var);
+
+test(71);  
+#endif
+
+
       System& aux_system = es.get_system<System>("Reference-Configuration");
       std::vector<unsigned int> undefo_index;
-      #if DYNAMIC
-      std::vector<unsigned int> vel_index;
-      #endif
-           
+      std::vector<unsigned int> vel_index;           
 
       for (unsigned int qp=0; qp<qrule.n_points(); qp++)
         {
 
 
-     Point rX;
- for (unsigned int l=0; l<n_p_dofs; l++)
+
+ Point rX;
+ for (unsigned int l=0; l<n_u_dofs; l++)
             {
-rX(0) += psi[l][qp]*ref_sys.current_local_solution->el(dof_indices_u[l]);
-rX(1) += psi[l][qp]*ref_sys.current_local_solution->el(dof_indices_v[l]);
-rX(2) += psi[l][qp]*ref_sys.current_local_solution->el(dof_indices_w[l]);
+rX(0) += phi[l][qp]*ref_sys.current_local_solution->el(dof_indices_u[l]);
+rX(1) += phi[l][qp]*ref_sys.current_local_solution->el(dof_indices_v[l]);
+rX(2) += phi[l][qp]*ref_sys.current_local_solution->el(dof_indices_w[l]);
             }
 
 
-	  #if INCOMPRESSIBLE
-	  Number   p = 0.;
-	  #endif
+
+#if INERTIA || DT
+test(72);  
+Real rho_s=15;
+
+Point current_x;
+ for (unsigned int l=0; l<n_u_dofs; l++)
+ {
+current_x(0) += phi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_u[l]);
+current_x(1) += phi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_v[l]);
+current_x(2) += phi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_w[l]);
+}
+
+Point old_x;
+ for (unsigned int l=0; l<n_u_dofs; l++)
+ {
+old_x(0) += phi[l][qp]*last_non_linear_soln.old_local_solution->el(dof_indices_u[l]);
+old_x(1) += phi[l][qp]*last_non_linear_soln.old_local_solution->el(dof_indices_v[l]);
+old_x(2) += phi[l][qp]*last_non_linear_soln.old_local_solution->el(dof_indices_w[l]);
+}
+#if INERTIA
+Point old_vel;
+ for (unsigned int l=0; l<n_u_dofs; l++)
+ {
+old_vel(0) += phi[l][qp]*last_non_linear_soln.old_local_solution->el(dof_indices_a[l]);
+old_vel(1) += phi[l][qp]*last_non_linear_soln.old_local_solution->el(dof_indices_b[l]);
+old_vel(2) += phi[l][qp]*last_non_linear_soln.old_local_solution->el(dof_indices_c[l]);
+}
+Point current_vel;
+ for (unsigned int l=0; l<n_u_dofs; l++)
+ {
+current_vel(0) += phi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_a[l]);
+current_vel(1) += phi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_b[l]);
+current_vel(2) += phi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_c[l]);
+}
+#endif
+
+#if UN_MINUS_ONE
+Point unm1_x;
+ for (unsigned int l=0; l<n_u_dofs; l++)
+ {
+unm1_x(0) += phi[l][qp]*unm1.old_local_solution->el(dof_indices_u[l]);
+unm1_x(1) += phi[l][qp]*unm1.old_local_solution->el(dof_indices_v[l]);
+unm1_x(2) += phi[l][qp]*unm1.old_local_solution->el(dof_indices_w[l]);
+}
+#endif
+
+Point value_acc;
+Point value_acc_alt;
+
+#if DT
+for (unsigned int d = 0; d < dim; ++d) {
+ value_acc_alt(d) = (rho_s)*( ((current_x(d)-rX(d))-(old_x(d)-rX(d)))-((old_x(d)-rX(d))- (unm1_x(d)-rX(d))) );  
+value_acc(d) = (rho_s)*((current_x(d))-2*(old_x(d))+ (unm1_x(d)));  
+value_acc(d) = (rho_s)*((current_x(d))-(old_x(d)));  
+}
+#endif
+
+Point res_1;
+Point res_2;
+#if INERTIA
+for (unsigned int d = 0; d < dim; ++d) {
+res_1(d) = (rho_s)*((current_vel(d))-(old_vel(d)));
+res_2(d) = current_x(d)-dt*current_vel(d)-old_x(d);    
+}
+/*
+std::cout<<" current_vel "<<current_vel<<std::endl;
+std::cout<<" res_1 "<<res_1<<std::endl;
+std::cout<<" res_2 "<<res_2<<std::endl;
+*/
+#endif
+
+
+
+test(73);  
+#endif
+
+
+Number   p_solid = 0.;
 
 #if MOVING_MESH
 	grad_u_mat(0) = grad_u_mat(1) = grad_u_mat(2) = 0;
@@ -326,75 +454,38 @@ rX(2) += psi[l][qp]*ref_sys.current_local_solution->el(dof_indices_w[l]);
       aux_system.current_local_solution->get(undefo_index, u_undefo);
       for (unsigned int l = 0; l != n_u_dofs; l++)
         grad_u_mat(d).add_scaled(dphi[l][qp], u_undefo[l]); 
-//std::cout << "u_undefo" << u_undefo[0]<< std::endl;
-//std::cout << "dphi[l][qp] " << dphi[1][1] << std::endl;
-    }
-#endif
-   // std::cout << "grad_u_mat" << grad_u_mat(0)<< std::endl;
-
-
-#if FIXED_MESH
-	grad_u_mat(0) = grad_u_mat(1) = grad_u_mat(2) = 0;
-    for (unsigned int d = 0; d < dim; ++d) {
-      std::vector<Number> X_undefo;
-      std::vector<Number> X_disp;
-
-      last_non_linear_soln.get_dof_map().dof_indices(elem, undefo_index,d);
-      last_non_linear_soln.current_local_solution->get(undefo_index, X_disp);
-
-      for (unsigned int l = 0; l != n_u_dofs; l++)
-        grad_u_mat(d).add_scaled(dphi[l][qp], X_disp[l]); // u_current(l)); // -
-    }
+ }
 #endif
 
 
-#if DYNAMIC & FIXED_MESH
-grad_u_mat_old(0) = grad_u_mat_old(1) = grad_u_mat_old(2) = 0;
-    for (unsigned int d = 0; d < dim; ++d) {
-      std::vector<Number> X_undefo;
-      std::vector<Number> X_disp;
-      last_non_linear_soln.get_dof_map().dof_indices(elem, undefo_index,d);
-      last_non_linear_soln.old_local_solution->get(undefo_index, X_disp);
-      for (unsigned int l = 0; l != n_u_dofs; l++)
-        grad_u_mat_old(d).add_scaled(dphi[l][qp],X_disp[l]); 
-    }
-grad_u_mat(0)=0.5*(grad_u_mat_old(0)+grad_u_mat(0));
-grad_u_mat(1)=0.5*(grad_u_mat_old(1)+grad_u_mat(1));
-grad_u_mat(2)=0.5*(grad_u_mat_old(2)+grad_u_mat(2));
-#endif
+//#include "fixed_mesh_in_solid_assemble_code.txt"
           
-            #if INCOMPRESSIBLE
-            // Compute the current pressure value at this quadrature point.
-          for (unsigned int l=0; l<n_p_dofs; l++)
+      #if INCOMPRESSIBLE
+      for (unsigned int l=0; l<n_p_dofs; l++)
             {
-              p += psi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_p[l]);
+              p_solid += psi[l][qp]*last_non_linear_soln.current_local_solution->el(dof_indices_p[l]);
             }
-	  #endif
+      #endif
 	  
 
 
-#if INCOMPRESSIBLE &&  PORO
+#if INCOMPRESSIBLE 
 Real m=0;
 Real p_fluid=0;
 
-#if FLUID_VEL && CHAP
+#if FLUID_VEL 
 for (unsigned int l=0; l<n_p_dofs; l++)
  {
    p_fluid += psi[l][qp]*fluid_system_vel.current_local_solution->el(dof_indices_p[l]);
  }
 
-
 //As outlined in Chappel p=(p_curr-p_old)/2
  Real p_fluid_old=0;
 for (unsigned int l=0; l<n_p_dofs; l++)
  {
-              p_fluid_old += psi[l][qp]*fluid_system_vel.old_local_solution->el(dof_indices_p[l]);
+   p_fluid_old += psi[l][qp]*fluid_system_vel.old_local_solution->el(dof_indices_p[l]);
  }
-
 p_fluid=0.5*p_fluid+0.5*p_fluid_old;
-
-
-//p_fluid=0;
 
 
 Real m_old=0;
@@ -410,150 +501,104 @@ for (unsigned int l=0; l<n_p_dofs; l++)
  {
    m_old += psi[l][qp]*fluid_system_vel.old_local_solution->el(dof_indices_m[l]);
  }
-
-
 #endif
 
+material.init_for_qp(grad_u_mat, p_solid, qp, 1.0*m+0.0*m_old, p_fluid);
 
-material.init_for_qp(grad_u_mat, p, qp, 1.0*m+0.0*m_old, p_fluid);
 #endif
-
-#if !CHAP
-material.init_for_qp(grad_u_mat, p, qp, m,p_fluid);
-#endif
-
-#endif 
+#endif //#if INCOMPRESSIBLE
 
 
 #if INCOMPRESSIBLE && ! PORO
-material.init_for_qp(grad_u_mat, p, qp);
+material.init_for_qp(grad_u_mat, p_solid, qp);
 #endif 
 
-#if COMPRESSIBLE 
-Number p_comp=0;
-material.init_for_qp(grad_u_mat,p_comp,qp);
-#endif
           for (unsigned int i=0; i<n_u_dofs; i++)
             {
             res.resize(dim);
             material.get_residual(res, i);
             res.scale(JxW[qp]);
-
-       		//Real E=10;
-       		//Real nu=0.3;
-       		//Real mu = E / (2.0 * (1.0 + nu));
-       		//Real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
-
-      	Fu(i) += res(0);              
-        Fv(i) += res(1) ; 
-	Fw(i) += res(2);  
-
-
-DenseVector<Real> body_force(3);
-get_bodyforce(body_force,rX,progress); 
-body_force.scale(0);
-
-           Fu(i) += (-1.0)*body_force(0)*JxW[qp]*phi[i][qp];
-           Fv(i) += (-1.0)*body_force(1)*JxW[qp]*phi[i][qp];
-           Fw(i) += (-1.0)*body_force(2)*JxW[qp]*phi[i][qp];
-
-#if ANALNEO
-           Fw(i) += (-1.0)*progress*0.1*JxW[qp]*phi[i][qp];
+#if INERTIA
+            res.scale(dt);
 #endif
 
-  #if GRAVITY
-  #if STATIC
-        Fw(i) += 0.1*JxW[qp]*phi[i][qp];
-  #endif       
-  #if DYNAMIC
+#if DT
+            res.scale(dt);
+#endif
+//std::cout<< "res "<<res<<std::endl;
+
+      	    Fu(i) += res(0);              
+            Fv(i) += res(1) ; 
+	    Fw(i) += res(2);  
+
+  	#if GRAVITY
         Real grav=0.0;
-           Fu(i) += progress*grav*JxW[qp]*phi[i][qp];
-  #endif        
-#endif
-	   
- #if DYNAMIC
-//Just add (rho/(dt^2))*Mass to the Jacobian matrix
-    const Real rho_mix =0.0;
-    const Real fac=(2*rho_mix)/(dt*dt);
-      for (unsigned int j=0; j<n_u_dofs; j++){
-	Real value = 1.0*fac*JxW[qp]*phi[i][qp]*phi[j][qp];
-          Kuu(i,j)+= value;
-          Kvv(i,j)+=  value;
-          Kww(i,j)+=  value;
-      }
- #endif
+        Fu(i) += progress*grav*JxW[qp]*phi[i][qp];
+	#endif
 
+#if INERTIA
+      Fu(i) +=  JxW[qp]*phi[i][qp]*res_1(0); 
+      Fv(i) +=  JxW[qp]*phi[i][qp]*res_1(1);     
+      Fw(i) +=  JxW[qp]*phi[i][qp]*res_1(2); 
 
-   
-#if DYNAMIC
-
-   std::vector<Number> value_acc(3,0);
-    for (unsigned int d = 0; d < dim; ++d) {
-
-   std::vector<Number> old_x;
-   std::vector<Number> current_x;
-   std::vector<Number> X;
-
-   newton_update.get_dof_map().dof_indices(elem, undefo_index,0);
-   last_non_linear_soln.old_local_solution->get(undefo_index, old_x);
-   last_non_linear_soln.current_local_solution->get(undefo_index, current_x);
-   ref_sys.current_local_solution->get(undefo_index, X);
-
-  #if VELOCITY
-  std::vector<Number> velocity_d;
-  velocity.current_local_solution->get(undefo_index, velocity_d);
-  value_acc[d] = fac*JxW[qp]*phi[i][qp]*((current_x[i]-X[i])-(old_x[i]-X[i])-dt*velocity_d[i]);    
-  #endif
- 
-
-#if UN_MINUS_ONE
-  std::vector<Number> unm1_x;
-  unm1.old_local_solution->get(undefo_index, unm1_x);
-  value_acc[d] = fac*JxW[qp]*phi[i][qp]*( (current_x[i]-X[i])-(old_x[i]-X[i])-1*((old_x[i]-X[i])-(unm1_x[i]-X[i])) );   //Might want to also change the jaconiamn for this since we have an extra current_x (so multiply M by 0.5, I think). 
-#endif
-
-}
-      Fu(i) +=  value_acc[0]; 
-      Fv(i) +=  value_acc[1];     
-      Fw(i) +=  value_acc[2];         
+      Fa(i) +=  JxW[qp]*phi[i][qp]*res_2(0);  
+      Fb(i) +=  JxW[qp]*phi[i][qp]*res_2(1);      
+      Fc(i) +=  JxW[qp]*phi[i][qp]*res_2(2);  
 #endif
 
 
-              // Matrix contributions for the uu and vv couplings.
-              for (unsigned int j=0; j<n_u_dofs; j++)
-                {
-                      material.get_linearized_stiffness(stiff, i, j);
-		      stiff.scale(JxW[qp]);
+// Matrix contributions for the uu and vv couplings.
+for (unsigned int j=0; j<n_u_dofs; j++)
+   {
+    material.get_linearized_stiffness(stiff, i, j);
+    stiff.scale(JxW[qp]);
 
-		      Kuu(i,j)+=  stiff(u_var, u_var);
+#if DT
+            res.scale(dt);
+#endif
+
+#if INERTIA 
+    stiff.scale(dt);
+    Kua(i,j)+=  rho_s*JxW[qp]*phi[i][qp]*phi[j][qp];      
+    Kvb(i,j)+=  rho_s*JxW[qp]*phi[i][qp]*phi[j][qp];
+    Kwc(i,j)+=  rho_s*JxW[qp]*phi[i][qp]*phi[j][qp];
+
+
+    Kau(i,j)+=  JxW[qp]*phi[i][qp]*phi[j][qp];      
+    Kbv(i,j)+=  JxW[qp]*phi[i][qp]*phi[j][qp];
+    Kcw(i,j)+=  JxW[qp]*phi[i][qp]*phi[j][qp];
+
+    Kaa(i,j)+=  -dt*JxW[qp]*phi[i][qp]*phi[j][qp];      
+    Kbb(i,j)+=  -dt*JxW[qp]*phi[i][qp]*phi[j][qp];
+    Kcc(i,j)+=  -dt*JxW[qp]*phi[i][qp]*phi[j][qp];
+#endif
+
+
+
+
+    Kuu(i,j)+=  stiff(u_var, u_var);
+    Kuv(i,j)+=  stiff(u_var, v_var);
+    Kuw(i,j)+=  stiff(u_var, w_var);	      
+    Kvu(i,j)+=  stiff(v_var, u_var);
+    Kvv(i,j)+=  stiff(v_var, v_var);
+    Kvw(i,j)+=  stiff(v_var, w_var);
+    Kwu(i,j)+=  stiff(w_var, u_var);
+    Kwv(i,j)+=  stiff(w_var, v_var);
+    Kww(i,j)+=  stiff(w_var, w_var); 
+
+
 #if GRAVITY
-                    Kuu(i,j)+= 1*JxW[qp]*phi[i][qp]*phi[j][qp];
+    Kuu(i,j)+= 1*JxW[qp]*phi[i][qp]*phi[j][qp];
 #endif
-
-#if ANALNEO
-                    Kww(i,j)+= 1*JxW[qp]*phi[i][qp]*phi[j][qp];
-#endif
-		      Kuv(i,j)+=  stiff(u_var, v_var);
-		      Kuw(i,j)+=  stiff(u_var, w_var);
-		      
-		      Kvu(i,j)+=  stiff(v_var, u_var);
-		      Kvv(i,j)+=  stiff(v_var, v_var);
-		      Kvw(i,j)+=  stiff(v_var, w_var);
-
-		      Kwu(i,j)+=  stiff(w_var, u_var);
-		      Kwv(i,j)+=  stiff(w_var, v_var);
-		      Kww(i,j)+=  stiff(w_var, w_var); 
                 }
             }
 
+
 #if INCOMPRESSIBLE && FLUID_P_CONST
-           for (unsigned int i = 0; i < n_p_dofs; i++) {
-
+         for (unsigned int i = 0; i < n_p_dofs; i++) {
 	  material.get_p_residual(p_res, i);
-
 	  p_res.scale(JxW[qp]);
           Fp(i) += p_res(0);
-
 	  }
     
     for (unsigned int i = 0; i < n_u_dofs; i++) {
@@ -561,7 +606,7 @@ body_force.scale(0);
 	    material.get_linearized_uvw_p_stiffness(p_stiff, i, j);
 	   p_stiff.scale(JxW[qp]);
             Kup(i, j) += p_stiff(0);
-	          Kvp(i, j) += p_stiff(1);
+	    Kvp(i, j) += p_stiff(1);
             Kwp(i, j) += p_stiff(2);
 	  }
     }
@@ -587,7 +632,6 @@ body_force.scale(0);
             Kpp(i, j) += 1*JxW[qp]*psi[i][qp]*psi[j][qp];
     }
     }
-
 #endif
 
 
@@ -597,11 +641,10 @@ body_force.scale(0);
       newton_update.matrix->add_matrix (Ke, dof_indices);
       newton_update.rhs->add_vector    (Fe, dof_indices);
 } // end of element loop
-test(72);
+
      //   dof_map.constrain_element_matrix_and_vector (Ke, Fe, dof_indices);
      newton_update.rhs->close();
      newton_update.matrix->close();
-
 
 #if LOG_ASSEMBLE_PERFORMANCE
 perf_log.pop("assemble stiffness");
@@ -618,7 +661,9 @@ assemble_bcs(es);
 perf_log.pop("assemble bcs");
 #endif
 
-
+std::ofstream lhs_out("lhsoutS3.dat");
+Ke.print(lhs_out);
+lhs_out.close();
   return;
 }
 

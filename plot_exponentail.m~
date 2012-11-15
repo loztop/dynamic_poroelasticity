@@ -1,0 +1,4 @@
+close all
+time=[0:0.01:0.1]
+
+plot(time,(1-exp(-(time.^())./0.01)))

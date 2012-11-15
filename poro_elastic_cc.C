@@ -62,28 +62,38 @@ void PoroelasticConfig::calculate_stress_poro() {
        RealTensor invC = inv(C);
 
 
-S = 2*0.1 * (identity) - p_solid*invC;
+//S = 2*0.1 * (identity) - p_solid*invC;
 
-
-  S = 0.5 * lambda * (detF * detF - 1) * invC + mu * (identity - invC);
+ S = 0.5 * lambda * (detF * detF - 1) * invC + mu * (identity - invC);
 
 S += - p_solid*J*invC;
 
-//S = 2*2*(identity);
+
+
+
 
 //S += - (1)*p_solid*J*J*invC- 0*p_solid*(-1-m)*J*invC;
 
 
       //convert to current configuration using a push forward operation
+
+
+
        tau = (F * S) * Ft;
-       sigma = 1/detF * tau;
+       sigma = 1.0/detF * tau;
 }
 
 #if INCOMPRESSIBLE
 void PoroelasticConfig::get_p_residual(DenseVector<Real> & p_residuum, unsigned int & i) {
        Real detF = F.det();
        p_residuum.resize(1);
-       p_residuum(0)=(1/detF) *psi[i][current_qp]*(detF-1-m);   ///Rp according to chaste fem *psi[i][current_qp] in main code       
+
+       //p_residuum(0)=(1.0/detF) *psi[i][current_qp]*(detF-1 ); 
+       p_residuum(0)=(1.0/detF) *psi[i][current_qp]*(detF-1-m); 
+
+       //std::cout << "(detF-1-m) " << (detF-1-m) <<std::endl;
+       //std::cout << "(m) " << m <<std::endl;
+  ///Rp according to chaste fem *psi[i][current_qp] in main code       
 
 }
 #endif
@@ -123,9 +133,16 @@ void PoroelasticConfig::c_update(RealTensor C) {
 
 void PoroelasticConfig::init_for_qp(VectorValue<Gradient> & grad_u, Number & p_current, unsigned int qp, Real m, Real p_fluid) {
        this->current_qp = qp;
+#if DECOUPLE
+p_fluid=0;
+m=0;
+
+#endif
 
   this->p_fluid=p_fluid;
         this->m = m;
+
+
       #if INCOMPRESSIBLE 
 
      this->p_solid = p_current;
@@ -136,6 +153,8 @@ void PoroelasticConfig::init_for_qp(VectorValue<Gradient> & grad_u, Number & p_c
 
 Kperm=0.00001;
 Kperm=0.001;
+E = 1000.0;
+nu = 0.15;
 
       #endif
       
@@ -150,6 +169,7 @@ Kperm=0.001;
 #if MOVING_MESH
              invF(i, j) += grad_u(i)(j);
 #endif
+
 #if FIXED_MESH
                 F(i, j) += grad_u(i)(j);
 #endif
@@ -205,7 +225,6 @@ void PoroelasticConfig::calculate_tangent() {
 
        C_mat.resize(6, 6);
 
-  
    for (unsigned int i = 0; i < 3; ++i) {
                for (unsigned int j = 0; j < 3; ++j) {
                        if (i == j) {
@@ -237,6 +256,18 @@ invCinvC_mat.resize(6, 6);
 tensorOtensor_to_voigt(Identity,Identity,invCinvC_mat);
 invCinvC_mat.scale(delta_a);
 C_mat+=invCinvC_mat;
+
+
+/*
+//This is the linearization for S = 2*0.1 * (identity) - p_solid*invC; It converges beautifully.
+C_mat.resize(6, 6);
+     Real delta_c=-1*p_solid;
+DenseMatrix<Real> Z_mat;
+Z_mat.resize(6, 6);
+z_ref_to_voigt(Identity,Identity,Z_mat);
+Z_mat.scale((-1.0)*delta_c);
+C_mat+=Z_mat;
+*/
 
 /*
 Real factor2=0*J*(-1-m);

@@ -1,0 +1,68 @@
+for (unsigned int s=0; s<elem->n_sides(); s++){
+   if (elem->neighbor(s) == NULL)
+   {		
+   AutoPtr<Elem> side (elem->build_side(s));
+
+    for (unsigned int ns=0; ns<side->n_nodes(); ns++)
+    {
+
+     for (unsigned int n=0; n<elem->n_nodes(); n++){
+       Node *node = elem->get_node(n);
+	Point p;
+	for (unsigned int d = 0; d < 3; ++d) {
+      	unsigned int source_dof = node->dof_number(1, d, 0);
+      	Real value = ref_sys.current_local_solution->el(source_dof);
+      	p(d)=value;
+   	}
+	
+//Fix the bottom but let slide
+
+    if ((elem->node(n) == side->node(ns)) && (p(2)<0.001 )  )
+    {
+
+   for (unsigned int d = 0; d < 3; ++d) {
+  unsigned int source_dof = node->dof_number(1, 2, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+   }
+
+} 
+
+//Fix one corner, to remove the null space.
+/*
+    if ((elem->node(n) == side->node(ns)) && (p(2)<0.001 ) && (p(1)<0.001 ) && (p(0)<0.001 ) )
+    {
+
+   for (unsigned int d = 0; d < 3; ++d) {
+  unsigned int source_dof = node->dof_number(1, d, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof);
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+   }
+
+}
+*/
+
+//Constrain top
+
+    if ((elem->node(n) == side->node(ns)) && (p(2)>0.999 )  )
+    {
+
+  unsigned int source_dof = node->dof_number(1, 2, 0);
+  Real value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof)+0.0*(1-exp(-pow(time,1)/0.001));
+
+//value = last_non_linear_soln.current_local_solution->el(source_dof) - ref_sys.current_local_solution->el(source_dof)+0.2;
+
+  rows.push_back(source_dof);
+  newton_update.rhs->set(source_dof,value);
+//}
+     } 
+
+
+    } //end nodes in element lopp
+} // end nodes on side loop
+  
+ }//end elem->neighbor(s) == NULL 
+ }// end s=0; s<elem->n_sides(); s++
+

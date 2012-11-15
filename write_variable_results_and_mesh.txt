@@ -1,0 +1,33 @@
+#ifdef LIBMESH_HAVE_EXODUS_API
+      if ((t_step+1)%write_interval == 0)
+        { 
+  #if STATIC  
+        OStringStream file_name;
+        file_name << "/ecslab/lorenzb/Dropbox/libresults/cube_with_stokes";
+        OSSRealzeroright(file_name,3,0, t_step + 1);
+        file_name << ".e";	  
+	ExodusII_IO(mesh).write_equation_systems (file_name.str(),equation_systems);
+  #if WRITE_MESH
+	GmshIO(mesh).write(mesh_out_file_name);
+  #endif
+  #endif  
+
+  #if DYNAMIC
+  std::stringstream file_name;
+//  file_name << "/ecslab/lorenzb/Dropbox/";
+      file_name << "SIM_";
+
+  file_name << result_file_name;
+  file_name << std::setw(2) << std::setfill('0') << t_step;
+  file_name << ".e-s.";
+  file_name << std::setw(3) << std::setfill('0') << t_step+1;
+  exo.write_timestep(file_name.str(), equation_systems,t_step+1,time);
+
+#if WRITE_TEC
+  std::stringstream file_name_tec;
+  file_name_tec << "cube_darcy"<< t_step<< ".tec" ;
+  tec.write_equation_systems (file_name_tec.str(),equation_systems);
+#endif
+#endif
+     }
+#endif // #ifdef LIBMESH_HAVE_EXODUS_API
