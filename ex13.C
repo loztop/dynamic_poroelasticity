@@ -12,6 +12,8 @@
 int main (int argc, char** argv)
 {
 
+std::cout<< " Just checkin ... no real changes "<<std::endl;
+
 LibMeshInit init (argc, argv);
 
 #include "setup_mesh.txt"
