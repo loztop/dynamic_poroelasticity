@@ -12,7 +12,7 @@
 int main (int argc, char** argv)
 {
 
-std::cout<< " Just checkin ... no real changes "<<std::endl;
+std::cout<< "ISSUE 53 BRANCH VERSION "<<std::endl;
 
 LibMeshInit init (argc, argv);
 
