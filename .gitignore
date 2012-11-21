@@ -20,3 +20,6 @@ systems_of_equations_ex1-opt
 *.la
 *.a
 
+#Data files
+*.dat
+*.e-s.*
